@@ -81,6 +81,8 @@
   (.preventDefault event)
   #_(redo!))
 
+;;;;;;;; Game art ;;;;;;;;
+
 (defn spiral [lambda turns step]
   (for [deg (range 0 (* 360 turns) step)
         :let [theta (/ (* deg Math.PI) 180)]]
@@ -94,6 +96,18 @@
     (str "M" (origin 0) " " (origin 1) " "
          (apply str (map #(str "L" (% 0) " " (% 1) " ")
                          (map #(esg/xy->viewport view [40 40] %) points))))))
+
+(rum/defc pad [[x y]]
+  (let [view [viewport-width viewport-height]
+        padding [40 40]
+        [left top] (esg/xy->viewport view padding [x y])]
+    [:circle {:r 8
+              :cx left
+              :cy top
+              :fill "none"
+              :stroke "#ffffff"
+              :stroke-width "2px"
+              }]))
 
 (rum/defc svg-container < rum/reactive [g]
   [:svg {:view-box (str "0 0 " viewport-width " " viewport-height)
@@ -109,11 +123,16 @@
          :on-touch-end esg/handle-end-line
          }
 
-   [:path {:d (points->path [0 0] (spiral (/ 1 2 Math.PI) 1 1))
+   [:path {:d (points->path [0 0] (spiral (/ 1 2 Math.PI) 3 1))
            :fill "none"
            :stroke "#ffffff"
            :stroke-width "2px"}
     ]
+   [:g
+    ;(pad 0 0)
+    (map pad (spiral (/ 1 2 Math.PI) 3 40))
+    ]
+
    ])
 
 (rum/defc settings-modal < rum/reactive []
