@@ -10,7 +10,6 @@
                  [org.clojure/clojurescript "1.7.170"]
                  [devcards "0.2.1-5"]
                  [sablono "0.5.3"]
-                 [cljs/string]
                  [cljsjs/jquery "2.1.4-0"]
                  [cljsjs/bootstrap "3.3.6-0"]
 
