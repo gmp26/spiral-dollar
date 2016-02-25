@@ -34,6 +34,8 @@
   [sample]
   (partial heap-equivalent (:target sample) (:limit sample)))
 
+(defn game-over? [stings play]
+  (= (:state play) (:target stings)))
 
 (defn optimal-outcome [stings play]
   (+ play ((sample-heaps stings) play)))

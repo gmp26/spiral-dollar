@@ -1,13 +1,14 @@
 (ns  ^:figwheel-always gotit.main
-     (:require [generic.util :as util]
-               [sprague-grundy.core :as core :refer [Game]]
+     (:require [rum.core :as rum]
+               [generic.util :as util]
+               [generic.history :as hist]
+               [generic.play :as play]
+               [generic.components :as comp]
                [gotit.common :as common]
                [gotit.rules :as rules]
-               [rum.core :as rum]
                [cljsjs.jquery :as jq]
                [cljsjs.bootstrap :as bs]
                [events.svg :as esg]
-               [ui.components :as comp]
                ))
 
 
@@ -57,59 +58,6 @@
 (defn get-fill [status]
   ((status message-colours) colours))
 
-;;;
-;; move history handling
-;;;
-(defn reset-history!
-  "reset history to start a new game"
-  []
-  (reset! common/history {:undo [common/initial-play-state] :redo []}))
-
-(defn push-history!
-  "Record game state in history"
-  [play]
-  (swap! common/history #({:undo (conj (:undo %) play)
-                    :redo []})))
-
-
-(defn undo!
-  "pop history to the previous move"
-  []
-  (swap! common/history #(if (peek {:undo %})
-                    {:undo (pop {:undo %}) :redo (conj {:redo %} (pop {:undo %}))}
-                    %)))
-
-(defn redo!
-  "restore state of the next move if it exists"
-  []
-  (swap! common/history #(if (peek {:redo %})
-                    {:redo (pop {:redo %}) :undo (conj {:undo %} (pop {:redo %}))}
-                    %)))
-
-
-;;;
-;; computer turn
-;;;
-(defn computer-turn?
-  "Is it time for the computer to play?. Call this after player switch"
-  [stings play]
-  (and (not (common/game-over? stings play)) (= 1 (:players stings)) (= (:player stings) :b)))
-
-
-(defn player-can-move?
-  "Can a player move?"
-  [stings play]
-  (not (or (computer-turn? stings play) (common/game-over? stings play))))
-
-(defn play-computer-turn
-  "play computermove"
-  [stings play]
-  (common/commit-play (rules/optimal-outcome stings play)))
-
-(defn schedule-computer-turn
-  "schedule an ai play after a suitable delay"
-  []
-  (util/delayed-call computer-think-time play-computer-turn))
 
 ;;;
 ;; ui button events
@@ -159,12 +107,10 @@
          :on-touch-move esg/handle-move-line
          :on-touch-end esg/handle-end-line
          }
-   (comp/render-pad-path view 1080 16 1 2)
-   (comp/render-pad-path view 1080 16 4 6)
-   (comp/render-pad-path view 1080 16 0 15)
+   (comp/render-pad-path view 20 0 19)
 
    [:g
-    (map #(comp/pad view % pad-click) (comp/pad-spiral 1080 16))
+    (map #(comp/pad view % pad-click) (comp/pad-spiral 20))
     ]
    ])
 
@@ -237,7 +183,7 @@
   "derive win/lose/turn status"
   [stings play]
   (let [pa (= (:player stings) :a)
-        gover (common/game-over? stings play)
+        gover (rules/game-over? stings play)
         over-class (if gover " pulsed" "")]
     (if (= (:players stings) 1)
       [over-class (cond
@@ -262,9 +208,7 @@
                 :style {:display "inline"
                         :clear "none"
                         :float "right"
-                        :border-bottom-right-radius "35%"
                         }
-                :key "bu7"
                 :on-click common/reset-game
                 :on-touch-end common/reset-game}
        [:span {:class "fa fa-refresh"}]]]]))

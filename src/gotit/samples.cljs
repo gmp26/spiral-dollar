@@ -1,4 +1,4 @@
-(ns gotit.samples
+(ns ^:figwheel-always gotit.samples
   (:require [gotit.rules :refer [sample-followers sample-heaps]]
             [sprague-grundy.core :refer [Game]]))
 

@@ -18,7 +18,7 @@
                  [cljsjs/react "0.14.3-0"]
                  [cljsjs/react-dom "0.14.3-1"]
                  [cljsjs/react-dom-server "0.14.3-0"]
-
+                 [secretary "1.2.3"]
                  [rum "0.6.0"]
                  ]
 
