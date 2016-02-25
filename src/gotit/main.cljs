@@ -48,8 +48,8 @@
 (defn get-fill [status]
   ((status message-colours) colours))
 
-(def viewport-width 320)
-(def viewport-height 320)
+(def viewport-width 620)
+(def viewport-height 620)
 
 
 ;;;
@@ -83,11 +83,25 @@
 
 ;;;;;;;; Game art ;;;;;;;;
 
-(defn spiral [lambda turns step]
-  (for [deg (range 0 (* 360 turns) step)
-        :let [theta (/ (* deg Math.PI) 180)]]
-    [(/ (* lambda theta (Math.cos theta)) turns )
-     (/ (* lambda theta (Math.sin theta)) turns)])
+(defn spiral [turns step]
+  (let [lambda (/ 1 2 Math.PI)]
+    (for [deg (range 0 (inc (* 360 turns)) step)
+          :let [theta (/ (* deg Math.PI) 180)]]
+      [(/ (* lambda theta (Math.sin theta)) turns)
+       (- (/ (* lambda theta (Math.cos theta)) turns))
+       ]))
+  )
+
+(defn pad-spiral [turns step]
+  (let [lambda (/ 1 2 Math.PI)
+        step-count (/ (* 360 turns) step)
+        step-size (/ 1 (inc step-count))]
+    (for [mu  (range 0 1 step-size)
+          :let [deg (* (Math.sqrt  mu) 360 turns)
+                theta (/ (* deg Math.PI) 180)]]
+      [(/ (* lambda theta (Math.sin theta)) turns)
+       (- (/ (* lambda theta (Math.cos theta)) turns))
+       ]))
   )
 
 (defn points->path [start points]
@@ -123,14 +137,14 @@
          :on-touch-end esg/handle-end-line
          }
 
-   [:path {:d (points->path [0 0] (spiral (/ 1 2 Math.PI) 3 1))
+   [:path {:d (points->path [0 0] (spiral 3 1))
            :fill "none"
            :stroke "#ffffff"
            :stroke-width "2px"}
     ]
    [:g
     ;(pad 0 0)
-    (map pad (spiral (/ 1 2 Math.PI) 3 40))
+    (map pad (pad-spiral 3 40))
     ]
 
    ])
