@@ -92,3 +92,7 @@ body {
     /* -webkit-animation-iteration-count: 5; */
             animation-iteration-count: 5;
 }
+
+.pad {
+    cursor:pointer;
+}

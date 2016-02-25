@@ -1,11 +1,13 @@
 (ns  ^:figwheel-always gotit.main
      (:require [generic.util :as util]
-               [events.svg :as esg]
                [sprague-grundy.core :as core :refer [Game]]
                [gotit.common :as common]
+               [gotit.rules :as rules]
                [rum.core :as rum]
                [cljsjs.jquery :as jq]
                [cljsjs.bootstrap :as bs]
+               [events.svg :as esg]
+               [ui.components :as comp]
                ))
 
 
@@ -14,6 +16,11 @@
 ;;;
 ;; ui config
 ;;;
+(def view {:vw 620
+           :vh 620
+           :pad-x 40
+           :pad-y 40})
+
 (def messages {:yours "Your turn"
                :als   "My turn"
                :as-turn "Blue's turn"
@@ -42,15 +49,67 @@
                       :draw :draw
                       })
 
+(def computer-think-time 2000)
+
 (defn get-message [status]
   (status messages))
 
 (defn get-fill [status]
   ((status message-colours) colours))
 
-(def viewport-width 620)
-(def viewport-height 620)
+;;;
+;; move history handling
+;;;
+(defn reset-history!
+  "reset history to start a new game"
+  []
+  (reset! common/history {:undo [common/initial-play-state] :redo []}))
 
+(defn push-history!
+  "Record game state in history"
+  [play]
+  (swap! common/history #({:undo (conj (:undo %) play)
+                    :redo []})))
+
+
+(defn undo!
+  "pop history to the previous move"
+  []
+  (swap! common/history #(if (peek {:undo %})
+                    {:undo (pop {:undo %}) :redo (conj {:redo %} (pop {:undo %}))}
+                    %)))
+
+(defn redo!
+  "restore state of the next move if it exists"
+  []
+  (swap! common/history #(if (peek {:redo %})
+                    {:redo (pop {:redo %}) :undo (conj {:undo %} (pop {:redo %}))}
+                    %)))
+
+
+;;;
+;; computer turn
+;;;
+(defn computer-turn?
+  "Is it time for the computer to play?. Call this after player switch"
+  [stings play]
+  (and (not (common/game-over? stings play)) (= 1 (:players stings)) (= (:player stings) :b)))
+
+
+(defn player-can-move?
+  "Can a player move?"
+  [stings play]
+  (not (or (computer-turn? stings play) (common/game-over? stings play))))
+
+(defn play-computer-turn
+  "play computermove"
+  [stings play]
+  (common/commit-play (rules/optimal-outcome stings play)))
+
+(defn schedule-computer-turn
+  "schedule an ai play after a suitable delay"
+  []
+  (util/delayed-call computer-think-time play-computer-turn))
 
 ;;;
 ;; ui button events
@@ -83,48 +142,12 @@
 
 ;;;;;;;; Game art ;;;;;;;;
 
-(defn spiral [turns step]
-  (let [lambda (/ 1 2 Math.PI)]
-    (for [deg (range 0 (inc (* 360 turns)) step)
-          :let [theta (/ (* deg Math.PI) 180)]]
-      [(/ (* lambda theta (Math.sin theta)) turns)
-       (- (/ (* lambda theta (Math.cos theta)) turns))
-       ]))
-  )
+(defn pad-click [event]
+  (prn "you clicked"))
 
-(defn pad-spiral [turns step]
-  (let [lambda (/ 1 2 Math.PI)
-        step-count (/ (* 360 turns) step)
-        step-size (/ 1 (inc step-count))]
-    (for [mu  (range 0 1 step-size)
-          :let [deg (* (Math.sqrt  mu) 360 turns)
-                theta (/ (* deg Math.PI) 180)]]
-      [(/ (* lambda theta (Math.sin theta)) turns)
-       (- (/ (* lambda theta (Math.cos theta)) turns))
-       ]))
-  )
-
-(defn points->path [start points]
-  (let [view [viewport-width viewport-height]
-        origin (esg/xy->viewport view [40 40] [0 0])]
-    (str "M" (origin 0) " " (origin 1) " "
-         (apply str (map #(str "L" (% 0) " " (% 1) " ")
-                         (map #(esg/xy->viewport view [40 40] %) points))))))
-
-(rum/defc pad [[x y]]
-  (let [view [viewport-width viewport-height]
-        padding [40 40]
-        [left top] (esg/xy->viewport view padding [x y])]
-    [:circle {:r 8
-              :cx left
-              :cy top
-              :fill "none"
-              :stroke "#ffffff"
-              :stroke-width "2px"
-              }]))
 
 (rum/defc svg-container < rum/reactive [g]
-  [:svg {:view-box (str "0 0 " viewport-width " " viewport-height)
+  [:svg {:view-box (str "0 0 " (:vw view) " " (:vh view))
          :height "100%"
          :width "100%"
          :id "svg-container"
@@ -136,18 +159,15 @@
          :on-touch-move esg/handle-move-line
          :on-touch-end esg/handle-end-line
          }
+   (comp/render-pad-path view 1080 16 1 2)
+   (comp/render-pad-path view 1080 16 4 6)
+   (comp/render-pad-path view 1080 16 0 15)
 
-   [:path {:d (points->path [0 0] (spiral 3 1))
-           :fill "none"
-           :stroke "#ffffff"
-           :stroke-width "2px"}
-    ]
    [:g
-    ;(pad 0 0)
-    (map pad (pad-spiral 3 40))
+    (map #(comp/pad view % pad-click) (comp/pad-spiral 1080 16))
     ]
-
    ])
+
 
 (rum/defc settings-modal < rum/reactive []
   (let [active (fn [players player-count]

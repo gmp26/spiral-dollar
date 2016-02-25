@@ -33,3 +33,7 @@
   "partially curried heaps - returns a function of state"
   [sample]
   (partial heap-equivalent (:target sample) (:limit sample)))
+
+
+(defn optimal-outcome [stings play]
+  (+ play ((sample-heaps stings) play)))

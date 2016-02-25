@@ -6,7 +6,7 @@
 (defn viewport->xy
   "Convert svg coordinates [0,vw] [0,vh] to viewport relative
   coordinates [-1, 1] on both axes. Invert y."
-  [[vw vh] [pad-x pad-y] [left top]]
+  [{:keys [vw vh pad-x pad-y]} [left top]]
   (let [l (- left pad-x)
         t (- top pad-y)]
     [(dec (/ l (/ (- vw pad-x pad-x) 2)))  (- 1 (/ t (/ (-  vh pad-y pad-y) 2)))]))
@@ -15,9 +15,9 @@
   "Convert xy coordinates [-1,1] with origin at centre
   to svg coordinates [0, viewport-width] [0,- viewport-height],
   inverting the y axis so y = 1 is at the top, -1 at the bottom."
-  [[vw vh] [pad-x pad-y] [x y]]
+  [{:keys [vw vh pad-x pad-y]} [left top]]
   (let [[spad-x spad-y] (map #(/ % 2) [pad-x pad-y])]
-       [(+ (* (inc x) (/ (- vw pad-x) 2)) spad-x) (- (- vh (* (inc y) (/ (- vh pad-y) 2))) spad-y)]))
+       [(+ (* (inc left) (/ (- vw pad-x) 2)) spad-x) (- (- vh (* (inc top) (/ (- vh pad-y) 2))) spad-y)]))
 
 (defn touchXY
   "get position of first changed touch"
