@@ -16,7 +16,7 @@
         step-size (/ 1.00001 pad-count)
         turns (/ deg-of-turn 360)]
     (for [mu  (range 0 1 step-size)
-          :let [deg (* (Math.sqrt  mu) deg-of-turn)
+          :let [deg (* (Math.pow mu 0.6) deg-of-turn)
                 theta (/ (* deg Math.PI) 180)]]
       [(/ (* lambda theta (Math.sin theta)) turns)
        (- (/ (* lambda theta (Math.cos theta)) turns))
@@ -30,8 +30,8 @@
         step (/ deg-of-turn pad-count)
         step-size (/ 1.00001 pad-count)
         turns (/ deg-of-turn 360)]
-    (for [mu  (range (* from step-size) (* to step-size) (/ step-size 20))
-          :let [deg (* (Math.sqrt  mu) deg-of-turn)
+    (for [mu  (range (* from step-size) (* to step-size) (/ step-size 30))
+          :let [deg (* (Math.pow  mu 0.6) deg-of-turn)
                 theta (/ (* deg Math.PI) 180)]]
       [(/ (* lambda theta (Math.sin theta)) turns)
        (- (/ (* lambda theta (Math.cos theta)) turns))
@@ -51,7 +51,7 @@
         attrs (conj {} attributes (if handler {:on-click handler :on-touch-start handler} {}))
         target (:target (rum/react common/settings))
         state (:state (rum/react common/play-state))
-        n (:n attributes)
+        ;n (:n attributes)
         ]
     [:g
      [:circle.pad (merge {:r 20
@@ -61,25 +61,16 @@
                           :stroke "#ffffff"
                           :stroke-width "2px"
                           } attrs)]
-     [:text {:x (+ 25 (if (< n 10) (- left 6) (- left 13)))
-             :y (+ -25 (+ top 7))
-               :font-family "Verdana"
-               :font-size "20"
-               :fill "white"
-             } (str n)]
+     (comment     [:text {:x (+ 25 (if (< n 10) (- left 6) (- left 13)))
+                          :y (+ -25 (+ top 7))
+                          :font-family "Verdana"
+                          :font-size "20"
+                          :fill "white"
+                          } (str n)])
 
-     ;; street-view marks me
-     (when (= n state)
-       [:text {:x (- left 11.5)
-               :y (+ top 9.5)
-               :font-family "FontAwesome"
-               :font-size "30"
-               :fill "white"
-               } "\uf21d"]
-       )
 
      ;; x marks the spot
-     (when (= n target)
+     #_(when (= n target)
        [:text {:x (- left 11.5)
                :y (+ top 9.5)
                :font-family "FontAwesome"

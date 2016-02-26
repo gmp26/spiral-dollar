@@ -6,10 +6,10 @@
 (defonce svg-point (atom false))
 
 (defrecord Settings [title start target limit players])
-(defonce settings (atom (Settings. "Got it!" 0 20 4 1)))
+(defonce settings (atom (Settings. "Got it!" 0 23 4 1)))
 
-(defrecord PlayState [player state])
-(def initial-play-state (PlayState. :a 10))
+(defrecord PlayState [player reached state])
+(def initial-play-state (PlayState. :a [:a :b :b :b] 0))
 (defonce play-state (atom initial-play-state))
 
 
