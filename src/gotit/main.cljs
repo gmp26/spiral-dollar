@@ -107,7 +107,11 @@
          :on-touch-move esg/handle-move-line
          :on-touch-end esg/handle-end-line
          }
-   (comp/render-pad-path view 20 0 19)
+   (comp/render-pad-path view 20 0
+                         (+ (:limit (rum/react common/settings))
+                            (:state (rum/react common/play-state)))
+                         {:stroke "#3366ff"})
+   (comp/render-pad-path view 20 0 (:state (rum/react common/play-state)))
 
    [:g
     (map #(comp/pad view % pad-click) (comp/pad-spiral 20))
