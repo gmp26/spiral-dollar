@@ -1,6 +1,7 @@
 (ns ^:figwheel-always generic.components
-  (:require [rum.core :as rum]
-            [events.svg :as esg]
+    (:require [rum.core :as rum]
+              [gotit.common :as common]
+              [events.svg :as esg]
 ))
 
 (defn degrees-of-turn [pad-count]
@@ -43,18 +44,49 @@
          (apply str (map #(str "L" (% 0) " " (% 1) " ")
                          (map #(esg/xy->viewport view %) (rest points)))))))
 
-(rum/defc pad [view [x y] & [click-handler]]
+;; Actually, now a gotit specific pad.  Mmmm
+(rum/defc pad < rum/reactive [view [x y] & [attributes handler]]
   "create a clickable game pad"
-  (let [[left top] (esg/xy->viewport view [x y])]
-    [:circle.pad {:r 20
-                  :cx left
-                  :cy top
-                  :fill "red"
-                  :stroke "#ffffff"
-                  :stroke-width "2px"
-                  :on-click click-handler
-                  :on-touch-start click-handler
-                  }]))
+  (let [[left top] (esg/xy->viewport view [x y])
+        attrs (conj {} attributes (if handler {:on-click handler :on-touch-start handler} {}))
+        target (:target (rum/react common/settings))
+        state (:state (rum/react common/play-state))
+        n (:n attributes)
+        ]
+    [:g
+     [:circle.pad (merge {:r 20
+                          :cx left
+                          :cy top
+                          :fill "red"
+                          :stroke "#ffffff"
+                          :stroke-width "2px"
+                          } attrs)]
+     [:text {:x (+ 25 (if (< n 10) (- left 6) (- left 13)))
+             :y (+ -25 (+ top 7))
+               :font-family "Verdana"
+               :font-size "20"
+               :fill "white"
+             } (str n)]
+
+     ;; street-view marks me
+     (when (= n state)
+       [:text {:x (- left 11.5)
+               :y (+ top 9.5)
+               :font-family "FontAwesome"
+               :font-size "30"
+               :fill "white"
+               } "\uf21d"]
+       )
+
+     ;; x marks the spot
+     (when (= n target)
+       [:text {:x (- left 11.5)
+               :y (+ top 9.5)
+               :font-family "FontAwesome"
+               :font-size "30"
+               :fill "white"
+               } "\uf00d"]
+       )]))
 
 (rum/defc render-pad-path < rum/static [view pad-count from to & [styles]]
   "renders a spiral path from one pad to another"

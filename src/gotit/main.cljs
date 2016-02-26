@@ -19,8 +19,8 @@
 ;;;
 (def view {:vw 620
            :vh 620
-           :pad-x 40
-           :pad-y 40})
+           :pad-x 80
+           :pad-y 80})
 
 (def messages {:yours "Your turn"
                :als   "My turn"
@@ -107,15 +107,31 @@
          :on-touch-move esg/handle-move-line
          :on-touch-end esg/handle-end-line
          }
-   (comp/render-pad-path view 20 0
-                         (+ (:limit (rum/react common/settings))
-                            (:state (rum/react common/play-state)))
-                         {:stroke "#3366ff"})
-   (comp/render-pad-path view 20 0 (:state (rum/react common/play-state)))
+   [:g {:transform "translate(-40, -20)"}
+    (let [state (:state (rum/react common/play-state))
+          target (:target (rum/react common/settings))
+          pad-count (inc target)]
 
-   [:g
-    (map #(comp/pad view % pad-click) (comp/pad-spiral 20))
-    ]
+      [:g
+       ;; render path so far
+       (comp/render-pad-path view pad-count
+                             0
+                             target
+                             #_(+ (:limit (rum/react common/settings))
+                                (:state (rum/react common/play-state)))
+                             {:stroke "#0088ff"
+                              :stroke-width 30})
+
+       ;; render sand banks
+       (comp/render-pad-path view pad-count
+                            0
+                            state
+                            {:stroke "#dd0033"
+                             :stroke-width 20}
+                            )
+
+       (map-indexed #(comp/pad view %2 {:fill "green" :n %1} pad-click) (comp/pad-spiral pad-count))
+       ])]
    ])
 
 
@@ -228,6 +244,15 @@
     "On your turn you may move the counter up to " (:limit (rum/react common/settings)) " squares"]
    ])
 
+(rum/defc help < rum/reactive []
+  [:div {:style {:padding "20px"}}
+   [:.alert.alert-info
+    "On your turn you can build up to "
+    [:b (:limit (rum/react common/settings)) " bridges"]
+    " over the shallows. "
+    [:b " Tap the island you want to reach."]
+    " Be the first to reach the treasure marked with a cross. "]])
+
 (rum/defc game-container  < rum/reactive
   "the game container mounted onto the html game element"
   []
@@ -238,6 +263,7 @@
       [:p {:id "header"} (:title (rum/react common/settings))]
       (tool-bar play)
       (status-bar play)]
+     (help)
      (svg-container play)
      (footer)
      #_(debug-game play)]))
