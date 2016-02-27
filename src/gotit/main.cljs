@@ -1,5 +1,6 @@
 (ns  ^:figwheel-always gotit.main
      (:require [rum.core :as rum]
+               [generic.game :as game]
                [generic.util :as util]
                [generic.history :as hist]
                [generic.play :as play]
@@ -65,8 +66,8 @@
 (defn change-player-count
   "change to 1-player or 2-player mode"
   [count]
-  (swap! common/settings update :players #(if (= % 1) 2 1))
-  (common/reset-game))
+  (swap! common/Gotit update-in :play-state :players #(if (= % 1) 2 1))
+  (game/reset-game common/Gotit))
 
 (defn one-player [event]
   (.preventDefault event)
@@ -106,10 +107,10 @@
                 :fill (player colours)
                 } "\uf024"])) ; flag
    (keep-indexed (fn [index point]
-                   (when (= player (get (:reached @common/play-state) index)) point)) pads))  )
+                   (when (= player (get (:reached (:play-state @common/Gotit)) index)) point)) pads))  )
 
 (defn show-player [view pads]
-  (let [play-state @common/play-state
+  (let [play-state (:play-state @common/Gotit)
         p (esg/xy->viewport view (get pads (:state play-state)))]
     [:text {:x (- (first p) 15)
             :y (+  (second p) 10)
@@ -122,7 +123,7 @@
     ))
 
 (defn show-target [view pads]
-  (let [settings @common/settings
+  (let [settings (:settings @common/Gotit)
         target (:target settings)
         p (esg/xy->viewport view (pads target))]
     [:text {:x (- (first p) 11.5)
@@ -136,8 +137,9 @@
     ))
 
 (defn show-numbers [view pads]
-  (let [target (:target @common/settings)
-        state (:state @common/play-state)]
+  (let [game @common/Gotit
+        target (:target (:settings game))
+        state (:state (:play-state game))]
     (map
      #(do
         (let [[dex p] %
@@ -168,9 +170,10 @@
          :on-touch-end esg/handle-end-line
          }
    [:g {:transform "translate(-40, -20)"}
-    (let [play-state (rum/react common/play-state)
+    (let [game (rum/react common/Gotit)
+          play-state (:play-state game)
           state (:state play-state)
-          settings (rum/react common/settings)
+          settings (:settings game)
           target (:target settings)
           limit (:limit settings)
           reached (:reached play-state)
@@ -228,7 +231,8 @@
 (rum/defc settings-modal < rum/reactive []
   (let [active (fn [players player-count]
                  (if (= player-count players) "active" ""))
-        stings (rum/react common/settings)]
+        game (rum/react common/Gotit)
+        stings (:settings game)]
     [:#settings..modal.fade {:tab-index "-1"
                       :role "dialog"
                       :aria-labelledby "mySmallModalLabel"}
@@ -261,7 +265,8 @@
 (rum/defc tool-bar < rum/reactive []
   (let [active (fn [players player-count]
                  (if (= player-count players) "active" ""))
-        stings (rum/react common/settings)]
+        game (rum/react common/Gotit)
+        stings (:settings game)]
     [:div {:class "btn-group toolbar"}
      [:button.btn.btn-default.bs-example-modal-sm
       {:type "button"
@@ -318,8 +323,8 @@
                         :clear "none"
                         :float "right"
                         }
-                :on-click common/reset-game
-                :on-touch-end common/reset-game}
+                :on-click (fn [event] (game/reset-game common/Gotit))
+                :on-touch-end (fn [event] (game/reset-game common/Gotit))}
        [:span {:class "fa fa-refresh"}]]]]))
 
 (rum/defc footer < rum/reactive []
@@ -330,14 +335,14 @@
     "The last player able to move wins"
     ]
    [:p
-    "On your turn you may move the counter up to " (:limit (rum/react common/settings)) " squares"]
+    "On your turn you may move the counter up to " (:limit (:settings (rum/react common/Gotit))) " squares"]
    ])
 
 (rum/defc help < rum/reactive []
   [:div {:style {:padding "20px"}}
    [:.alert.alert-info
     "On your turn you can build up to "
-    [:b (:limit (rum/react common/settings)) " bridges"]
+    [:b (:limit (:settings (rum/react common/Gotit))) " bridges"]
     " over the shallows by "
     [:b " tapping the island you want to reach."]
     " Be the first to reach the treasure marked with a cross. "]])
@@ -345,11 +350,12 @@
 (rum/defc game-container  < rum/reactive
   "the game container mounted onto the html game element"
   []
-  (let [play (rum/react common/play-state)]
+  (let [game (rum/react common/Gotit)
+        play (:play-state game)]
     [:section {:id "game-container"}
      (settings-modal)
      [:div {:class "full-width"}
-      [:p {:id "header"} (:title (rum/react common/settings))]
+      [:p {:id "header"} (:title (:settings game))]
       (tool-bar play)
       (status-bar play)]
      (help)
@@ -362,7 +368,7 @@
 ;; game ui
 ;;;
 (rum/defc main < rum/reactive []
-  [:h1 (:title (rum/react common/settings))]
+  [:h1 (:title (:settings (rum/react common/Gotit)))]
   )
 
 (rum/mount (game-container) (util/el "main-app"))

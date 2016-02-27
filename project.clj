@@ -40,20 +40,22 @@
                                    :output-dir "resources/public/js/compiled/gotit"
                                    :source-map-timestamp true }}
 
-                       ]}
+                       {:id "devcards"
+                        :source-paths ["src"]
+                        :figwheel { :devcards true } ;; <- note this
+                        :compiler { :main       "gotit.devcards"
+                                   :asset-path "js/compiled/devcards_out"
+                                   :output-to  "resources/public/js/compiled/devcards.js"
+                                   :output-dir "resources/public/js/compiled/devcards_out"
+                                   :source-map-timestamp true }}
+                       ]
+              }
 
   :figwheel { :css-dirs ["resources/public/css"] })
 
 
 (comment
-  {:id "devcards"
-                        :source-paths ["src"]
-                        :figwheel { :devcards true } ;; <- note this
-                        :compiler { :main       "gotit.devcards"
-                                    :asset-path "js/compiled/devcards_out"
-                                    :output-to  "resources/public/js/compiled/sprague_grundy_devcards.js"
-                                    :output-dir "resources/public/js/compiled/devcards_out"
-                                   :source-map-timestamp true }}
+
                        {:id "dev"
                         :source-paths ["src"]
                         :figwheel true

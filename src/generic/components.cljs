@@ -49,9 +49,9 @@
   "create a clickable game pad"
   (let [[left top] (esg/xy->viewport view [x y])
         attrs (conj {} attributes (if handler {:on-click handler :on-touch-start handler} {}))
-        target (:target (rum/react common/settings))
-        state (:state (rum/react common/play-state))
-        ;n (:n attributes)
+        game (rum/react common/Gotit)
+        target (:target (:settings game))
+        state (:state (:play-state game))
         ]
     [:g
      [:circle.pad (merge {:r 20
