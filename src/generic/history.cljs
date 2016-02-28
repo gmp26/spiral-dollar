@@ -10,11 +10,6 @@
   []
   (reset! history {:undo [] :redo []}))
 
-(defn reset-history!
-  "reset history to start a new game. Will not change the initial state in {:undo 0}"
-  []
-  (swap! history #({:undo [{:undo %} 0] :redo []})))
-
 (defn push-history!
   "Record game state in history"
   [play]
@@ -29,12 +24,12 @@
   (swap! history
          #(assoc %
                  :undo (if-let [u (peek (:undo %))] (pop (:undo %)) [])
-                 :redo (if-let [u (peek (:undo %))] (conj (:redo %) u) (:redo %))))
+                 :redo (if-let [u (peek (:undo %))] (conj (:redo %) u) (:redo %)))))
 
-  (defn redo!
-    "restore state of the next move if it exists"
-    []
+(defn redo!
+  "restore state of the next move if it exists"
+  []
   (swap! history
          #(assoc %
                  :redo (if-let [u (peek (:redo %))] (pop (:redo %)) [])
-                 :undo (if-let [u (peek (:redo %))] (conj (:undo %) u) (:undo %))))))
+                 :undo (if-let [u (peek (:redo %))] (conj (:undo %) u) (:undo %)))))

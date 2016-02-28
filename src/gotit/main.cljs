@@ -81,38 +81,48 @@
   "undo button handler"
   [event]
   (.preventDefault event)
-  #_(undo!))
+  (hist/undo!)
+  )
 
 (defn redo
   "redo button handler"
   [event]
   (.preventDefault event)
-  #_(redo!))
+  (hist/redo!))
 
 ;;;;;;;; Game art ;;;;;;;;
 
 (defn pad-click [event pad-index]
   (prn "you clicked on " pad-index)
-  (when (not (game/is-computer-turn? common/Gotit))
-    (hist/push-history! (:state (:play-state @(:game common/Gotit))))
+  (when (game/player-can-move? common/Gotit)                  ;(not (game/is-computer-turn? common/Gotit))
+    (hist/push-history! (:play-state @(:game common/Gotit)))
     (game/commit-play common/Gotit pad-index)
     )
   )
 
+(defn other-player [player]
+    (if (= :a player) :b :a))
 
-(defn pads-reached-by [view pads player color]
+(defn reached?
+  "look in history to discover whether a play-state has been reached"
+  [play-state]
+  ((set (:undo @hist/history)) play-state))
+
+(defn pads-reached-by [view pads player]
   (map
-   #(do
-      (let [p (esg/xy->viewport view %)]
-        ;; render flag
-        [:text.numb {:x (- (first p) 15)
-                :y (+  (second p) 10)
-                :font-family "FontAwesome"
-                :font-size "30"
-                :fill (player colours)
-                } "\uf13d"])) ; flag
+   #(let [p (esg/xy->viewport view %)]
+      ;; render flag
+      [:text.numb {:x (- (first p) 15)
+                   :y (+  (second p) 10)
+                   :font-family "FontAwesome"
+                   :font-size "30"
+                   :fill (player colours)
+                   } "\uf041"]) ; map-marker
    (keep-indexed (fn [index point]
-                   (when (= player (get (:reached (:play-state @(:game common/Gotit))) index)) point)) pads))  )
+                   (when (reached? (common/PlayState.
+                                    player index))
+                     point))
+                 pads)))
 
 (defn show-player [view pads]
   (let [play-state (:play-state @(:game common/Gotit))
@@ -191,16 +201,16 @@
                              0
                              target
                              {:stroke "#3366bb"
-                              :stroke-width 60
+                              :stroke-width 40
                               :stroke-dasharray "15 20  5 10"
                               :stroke-linecap "round"}
                              )
        (comp/render-pad-path view pad-count
                              0
-                             (+ (:limit settings)
-                                state)
+                             (min target (+ (:limit settings)
+                                     state))
                              {:stroke "#0088ff"
-                              :stroke-width 40
+                              :stroke-width 30
                               :stroke-linecap "round"}
                              )
 
@@ -213,25 +223,27 @@
                              )
 
        ;; all islands
-       (map-indexed #(comp/pad view %2 {:fill (if (and (> %1 state) (< %1 (+ state limit 1))) "#ffcc00" "#77ccee")
+       (map-indexed #(comp/pad view %2 {:fill (if (< %1 (+ state limit 1))
+                                                   "#ffcc00"
+                                                   "#77ccee")
                                         :stroke "none"
                                         :style {:pointer-events (if (and (> %1 state) (< %1 (+ state limit 1))) "auto" "none")}
                                         :n %1} (fn [event] (pad-click event %1))) pads)
 
-       ;; islands reached by blue
-       (pads-reached-by view pads :b "#0000ff")
-
-       ;; islands reached by red
-       (pads-reached-by view pads :a "#ff0000")
-
-       ;; Current position of player
-       (show-player view pads)
-
        ;; Target Cross
        (show-target view pads)
 
+       ;; islands reached by blue
+       (pads-reached-by view pads :b)
+
+       ;; islands reached by red
+       (pads-reached-by view pads :a)
+
        ;; Number islands
        (show-numbers view pads)
+
+       ;; Current position of player
+       (show-player view pads)
 
        ])]
    ])
@@ -304,7 +316,7 @@
   "derive win/lose/turn status"
   [stings play]
   (let [pa (= (:player stings) :a)
-        gover (rules/game-over? stings play)
+        gover (game/is-over? common/Gotit)
         over-class (if gover " pulsed" "")]
     (if (= (:players stings) 1)
       [over-class (cond

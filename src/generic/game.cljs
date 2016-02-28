@@ -2,7 +2,10 @@
 
 (defprotocol IGame
   (is-over? [this]
-    "is the game over?")
+    "is the game over? return winner if true")
+
+  (next-player [this]
+    "return the next player")
 
   (reset-game [this]
     "reset game to starting position")
