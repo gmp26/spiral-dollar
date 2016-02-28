@@ -323,8 +323,8 @@
                         :clear "none"
                         :float "right"
                         }
-                :on-click (fn [event] (game/reset-game common/Gotit))
-                :on-touch-end (fn [event] (game/reset-game common/Gotit))}
+                :on-click #(game/reset-game common/Gotit)
+                :on-touch-end #(game/reset-game common/Gotit)}
        [:span {:class "fa fa-refresh"}]]]]))
 
 (rum/defc footer < rum/reactive []
