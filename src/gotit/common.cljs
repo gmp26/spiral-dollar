@@ -14,22 +14,44 @@
 (def initial-play-state (PlayState. :a [] 0))
 ;;(defonce play-state (atom initial-play-state))
 
-(defrecord Game [settings play-state]
+(defrecord Game [game]
   game/IGame
 
   (is-over? [this]
-    (= (:state (:play-state @this) (:target (:settings @this)))))
-
-  (reset-game [this]
-    (hist/reset-history!)
-    (swap! this assoc :play-state initial-play-state)
-    )
+    (let [gm @(:game this)]
+      (= (:state (:play-state game) (:target (:settings gm))))))
 
   (commit-play [this new-play]
-    (swap! this assoc :play-state new-play))
+    (let [game-state (:game this)
+          gm @game-state]
+
+      (reset! game-state (assoc-in gm [:play-state :state] new-play))))
+
+  (reset-game [this]
+    (let [game-state (:game this)]
+      (hist/reset-history!)
+      (game/commit-play this initial-play-state)))
+
+  (is-computer-turn?
+    [this]
+    (let [gm @(:game this)]
+      (and (not (game/is-over? this))
+           (= 1 (:players (:settings gm)))
+           (= (:player (:play-state gm)) :b))))
+
+  (player-can-move?
+    [this]
+    (not (or (game/is-computer-turn? this) (game/is-over? this))))
+
+  (play-computer-turn
+    [this optimal-outcome]
+    (game/commit-play this optimal-outcome))
+
+  (schedule-computer-turn
+    [this think-time optimal-outcome]
+    (util/delayed-call think-time (game/play-computer-turn this optimal-outcome)))
 
   )
 
-(defonce Gotit (atom (->Game
-                      initial-settings
-                      initial-play-state)))
+(defonce Gotit (->Game (atom {:settings initial-settings
+                              :play-state initial-play-state})))

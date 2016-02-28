@@ -53,7 +53,7 @@
                                  {:on-click handler
                                   :on-touch-start handler
                                   } {}))
-        game (rum/react common/Gotit)
+        game (rum/react (:game common/Gotit))
         target (:target (:settings game))
         state (:state (:play-state game))
         ]

@@ -18,19 +18,23 @@
 (defn push-history!
   "Record game state in history"
   [play]
-  (swap! history #({:undo (conj (:undo %) play)
-                    :redo []})))
+  (swap! history
+         #(assoc %
+                 :undo (conj (:undo %) play)
+                 :redo [])))
 
 (defn undo!
   "pop history to the previous move"
   []
   (swap! history
-         #(if (peek {:undo %})
-            {:undo (pop {:undo %}) :redo (conj {:redo %} (pop {:undo %}))}%)))
+         #(assoc %
+                 :undo (if-let [u (peek (:undo %))] (pop (:undo %)) [])
+                 :redo (if-let [u (peek (:undo %))] (conj (:redo %) u) (:redo %))))
 
-(defn redo!
-  "restore state of the next move if it exists"
-  []
+  (defn redo!
+    "restore state of the next move if it exists"
+    []
   (swap! history
-         #(if (peek {:redo %})
-            {:redo (pop {:redo %}) :undo (conj {:undo %} (pop {:redo %}))}%)))
+         #(assoc %
+                 :redo (if-let [u (peek (:redo %))] (pop (:redo %)) [])
+                 :undo (if-let [u (peek (:redo %))] (conj (:undo %) u) (:undo %))))))

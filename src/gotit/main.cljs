@@ -3,7 +3,7 @@
                [generic.game :as game]
                [generic.util :as util]
                [generic.history :as hist]
-               [generic.play :as play]
+
                [generic.components :as comp]
                [gotit.common :as common]
                [gotit.rules :as rules]
@@ -91,8 +91,12 @@
 
 ;;;;;;;; Game art ;;;;;;;;
 
-(defn pad-click [event]
-  (prn "you clicked")
+(defn pad-click [event pad-index]
+  (prn "you clicked on " pad-index)
+  (when (not (game/is-computer-turn? common/Gotit))
+    (hist/push-history! (:state (:play-state @(:game common/Gotit))))
+    (game/commit-play common/Gotit pad-index)
+    )
   )
 
 
@@ -108,10 +112,10 @@
                 :fill (player colours)
                 } "\uf13d"])) ; flag
    (keep-indexed (fn [index point]
-                   (when (= player (get (:reached (:play-state @common/Gotit)) index)) point)) pads))  )
+                   (when (= player (get (:reached (:play-state @(:game common/Gotit))) index)) point)) pads))  )
 
 (defn show-player [view pads]
-  (let [play-state (:play-state @common/Gotit)
+  (let [play-state (:play-state @(:game common/Gotit))
         p (esg/xy->viewport view (get pads (:state play-state)))]
     [:text.numb {:x (- (first p) 15)
             :y (+  (second p) 10)
@@ -124,7 +128,7 @@
     ))
 
 (defn show-target [view pads]
-  (let [settings (:settings @common/Gotit)
+  (let [settings (:settings @(:game common/Gotit))
         target (:target settings)
         p (esg/xy->viewport view (pads target))]
     [:text.numb {:x (- (first p) 11.5)
@@ -138,7 +142,7 @@
     ))
 
 (defn show-numbers [view pads]
-  (let [game @common/Gotit
+  (let [game @(:game common/Gotit)
         target (:target (:settings game))
         state (:state (:play-state game))]
     (map
@@ -171,7 +175,7 @@
 ;;         :on-touch-end esg/handle-end-line
          }
    [:g {:transform "translate(-40, -20)"}
-    (let [game (rum/react common/Gotit)
+    (let [game (rum/react (:game common/Gotit))
           play-state (:play-state game)
           state (:state play-state)
           settings (:settings game)
@@ -212,7 +216,7 @@
        (map-indexed #(comp/pad view %2 {:fill (if (and (> %1 state) (< %1 (+ state limit 1))) "#ffcc00" "#77ccee")
                                         :stroke "none"
                                         :style {:pointer-events (if (and (> %1 state) (< %1 (+ state limit 1))) "auto" "none")}
-                                        :n %1} pad-click) pads)
+                                        :n %1} (fn [event] (pad-click event %1))) pads)
 
        ;; islands reached by blue
        (pads-reached-by view pads :b "#0000ff")
@@ -235,7 +239,7 @@
 (rum/defc settings-modal < rum/reactive []
   (let [active (fn [players player-count]
                  (if (= player-count players) "active" ""))
-        game (rum/react common/Gotit)
+        game (rum/react (:game common/Gotit))
         stings (:settings game)]
     [:#settings..modal.fade {:tab-index "-1"
                       :role "dialog"
@@ -269,7 +273,7 @@
 (rum/defc tool-bar < rum/reactive []
   (let [active (fn [players player-count]
                  (if (= player-count players) "active" ""))
-        game (rum/react common/Gotit)
+        game (rum/react (:game common/Gotit))
         stings (:settings game)]
     [:div {:class "btn-group toolbar"}
      [:button.btn.btn-default.bs-example-modal-sm
@@ -296,7 +300,6 @@
       [:span {:class "fa fa-repeat"}]]]
      ))
 
-
 (defn get-status
   "derive win/lose/turn status"
   [stings play]
@@ -312,7 +315,6 @@
                     (= gover :a) :b-win
                     (= gover :b) :a-win
                     :else (if pa :as-turn :bs-turn))])))
-
 
 (rum/defc status-bar
   "render top status bar"
@@ -339,11 +341,11 @@
     "The last player able to move wins"
     ]
    [:p
-    "On your turn you may move the counter up to " (:limit (:settings (rum/react common/Gotit))) " squares"]
+    "On your turn you may move the counter up to " (:limit (:settings (rum/react (:game common/Gotit)))) " squares"]
    ])
 
 (rum/defc show-game-state < rum/reactive []
-  (let [game (rum/react common/Gotit)]
+  (let [game (rum/react (:game common/Gotit))]
     [:.debug
      [:p (str (into {} (:settings game)))]
      [:p (str (into {} (:play-state game)))]
@@ -353,7 +355,7 @@
   [:div {:style {:padding "20px"}}
    [:.alert.alert-info
     "On your turn you can build up to "
-    [:b (:limit (:settings (rum/react common/Gotit))) " bridges"]
+    [:b (:limit (:settings (rum/react (:game common/Gotit)))) " bridges"]
     " over the shallows by "
     [:b " tapping the island you want to reach."]
     " Be the first to reach the treasure marked with a cross. "
@@ -362,7 +364,7 @@
 (rum/defc game-container  < rum/reactive
   "the game container mounted onto the html game element"
   []
-  (let [game (rum/react common/Gotit)
+  (let [game (rum/react (:game common/Gotit))
         play (:play-state game)]
     [:section {:id "game-container"}
      (settings-modal)
@@ -380,7 +382,7 @@
 ;; game ui
 ;;;
 (rum/defc main < rum/reactive []
-  [:h1 (:title (:settings (rum/react common/Gotit)))]
+  [:h1 (:title (:settings (rum/react (:game common/Gotit))))]
   )
 
 (rum/mount (game-container) (util/el "main-app"))
