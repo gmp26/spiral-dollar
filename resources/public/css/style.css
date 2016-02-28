@@ -94,3 +94,7 @@ body {
 .pad {
     cursor:pointer;
 }
+
+.numb {
+    pointer-events: none;
+}

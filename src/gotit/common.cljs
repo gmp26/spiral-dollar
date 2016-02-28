@@ -11,7 +11,7 @@
 ;;(defonce settings (atom (Settings. "Got it!" 0 23 4 1)))
 
 (defrecord PlayState [player reached state])
-(def initial-play-state (PlayState. :a [:a :b :b :b] 0))
+(def initial-play-state (PlayState. :a [] 0))
 ;;(defonce play-state (atom initial-play-state))
 
 (defrecord Game [settings play-state]

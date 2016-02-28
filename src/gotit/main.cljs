@@ -92,7 +92,8 @@
 ;;;;;;;; Game art ;;;;;;;;
 
 (defn pad-click [event]
-  (prn "you clicked"))
+  (prn "you clicked")
+  )
 
 
 (defn pads-reached-by [view pads player color]
@@ -100,19 +101,19 @@
    #(do
       (let [p (esg/xy->viewport view %)]
         ;; render flag
-        [:text {:x (- (first p) 15)
+        [:text.numb {:x (- (first p) 15)
                 :y (+  (second p) 10)
                 :font-family "FontAwesome"
                 :font-size "30"
                 :fill (player colours)
-                } "\uf024"])) ; flag
+                } "\uf13d"])) ; flag
    (keep-indexed (fn [index point]
                    (when (= player (get (:reached (:play-state @common/Gotit)) index)) point)) pads))  )
 
 (defn show-player [view pads]
   (let [play-state (:play-state @common/Gotit)
         p (esg/xy->viewport view (get pads (:state play-state)))]
-    [:text {:x (- (first p) 15)
+    [:text.numb {:x (- (first p) 15)
             :y (+  (second p) 10)
             :font-family "FontAwesome"
             :font-size "30"
@@ -126,7 +127,7 @@
   (let [settings (:settings @common/Gotit)
         target (:target settings)
         p (esg/xy->viewport view (pads target))]
-    [:text {:x (- (first p) 11.5)
+    [:text.numb {:x (- (first p) 11.5)
             :y (+  (second p) 3)
             :font-family "FontAwesome"
             :font-size "30"
@@ -145,7 +146,7 @@
         (let [[dex p] %
               [left top] (esg/xy->viewport view p)]
           ;; render number
-          [:text {:x (+ 4 (if (< dex 10) (- left 6) (- left 13)))
+          [:text.numb {:x (+ 4 (if (< dex 10) (- left 6) (- left 13)))
                   :y (+ 10 (+ top 7))
                   :stroke "white"
                   :stroke-width 0.1
@@ -161,13 +162,13 @@
          :height "100%"
          :width "100%"
          :id "svg-container"
-         :on-mouse-down esg/handle-start-line
-         :on-mouse-move esg/handle-move-line
-         :on-mouse-out esg/handle-out
-         :on-mouse-up esg/handle-end-line
-         :on-touch-start esg/handle-start-line
-         :on-touch-move esg/handle-move-line
-         :on-touch-end esg/handle-end-line
+;;         :on-mouse-down esg/handle-start-line
+;;         :on-mouse-move esg/handle-move-line
+;;         :on-mouse-out esg/handle-out
+;;         :on-mouse-up esg/handle-end-line
+;;         :on-touch-start esg/handle-start-line
+;;         :on-touch-move esg/handle-move-line
+;;         :on-touch-end esg/handle-end-line
          }
    [:g {:transform "translate(-40, -20)"}
     (let [game (rum/react common/Gotit)
@@ -208,7 +209,10 @@
                              )
 
        ;; all islands
-       (map-indexed #(comp/pad view %2 {:fill "#ffaa00" :n %1} pad-click) pads)
+       (map-indexed #(comp/pad view %2 {:fill (if (and (> %1 state) (< %1 (+ state limit 1))) "#ffcc00" "#77ccee")
+                                        :stroke "none"
+                                        :style {:pointer-events (if (and (> %1 state) (< %1 (+ state limit 1))) "auto" "none")}
+                                        :n %1} pad-click) pads)
 
        ;; islands reached by blue
        (pads-reached-by view pads :b "#0000ff")
@@ -314,7 +318,7 @@
   "render top status bar"
   [stings play]
   (let [[over-class status] (get-status stings play)]
-    [:div
+    [:div {:style {:height "20px"}}
      [:p {:class (str "status " over-class)
           :style {:background-color (get-fill status)} :key "b4"} (get-message status)
       [:button {:type "button"
@@ -338,14 +342,22 @@
     "On your turn you may move the counter up to " (:limit (:settings (rum/react common/Gotit))) " squares"]
    ])
 
-(rum/defc help < rum/reactive []
+(rum/defc show-game-state < rum/reactive []
+  (let [game (rum/react common/Gotit)]
+    [:.debug
+     [:p (str (into {} (:settings game)))]
+     [:p (str (into {} (:play-state game)))]
+     [:p (str (rum/react hist/history))]]))
+
+(rum/defc help < rum/reactive [debug?]
   [:div {:style {:padding "20px"}}
    [:.alert.alert-info
     "On your turn you can build up to "
     [:b (:limit (:settings (rum/react common/Gotit))) " bridges"]
     " over the shallows by "
     [:b " tapping the island you want to reach."]
-    " Be the first to reach the treasure marked with a cross. "]])
+    " Be the first to reach the treasure marked with a cross. "
+    (when debug? (show-game-state))]])
 
 (rum/defc game-container  < rum/reactive
   "the game container mounted onto the html game element"
@@ -358,10 +370,10 @@
       [:p {:id "header"} (:title (:settings game))]
       (tool-bar play)
       (status-bar play)]
-     (help)
+     (help true)
      (svg-container play)
      (footer)
-     #_(debug-game play)]))
+]))
 
 
 ;;;

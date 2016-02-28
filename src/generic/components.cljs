@@ -48,7 +48,11 @@
 (rum/defc pad < rum/reactive [view [x y] & [attributes handler]]
   "create a clickable game pad"
   (let [[left top] (esg/xy->viewport view [x y])
-        attrs (conj {} attributes (if handler {:on-click handler :on-touch-start handler} {}))
+        attrs (conj {}
+                    attributes (if handler
+                                 {:on-click handler
+                                  :on-touch-start handler
+                                  } {}))
         game (rum/react common/Gotit)
         target (:target (:settings game))
         state (:state (:play-state game))
@@ -61,23 +65,8 @@
                           :stroke "#ffffff"
                           :stroke-width "2px"
                           } attrs)]
-     (comment     [:text {:x (+ 25 (if (< n 10) (- left 6) (- left 13)))
-                          :y (+ -25 (+ top 7))
-                          :font-family "Verdana"
-                          :font-size "20"
-                          :fill "white"
-                          } (str n)])
 
-
-     ;; x marks the spot
-     #_(when (= n target)
-       [:text {:x (- left 11.5)
-               :y (+ top 9.5)
-               :font-family "FontAwesome"
-               :font-size "30"
-               :fill "white"
-               } "\uf00d"]
-       )]))
+]))
 
 (rum/defc render-pad-path < rum/static [view pad-count from to & [styles]]
   "renders a spiral path from one pad to another"
