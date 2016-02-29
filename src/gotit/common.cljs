@@ -6,11 +6,11 @@
 ;; will be created to calculate svg screen transform
 (defonce svg-point (atom false))
 
-(defrecord Settings [title start target limit players])
-(def initial-settings (Settings. "Got it!" 0 23 4 2))
+(defrecord Settings [title start target limit think-time players])
+(def initial-settings (Settings. "Got it islands!" 0 23 4 2000 1))
 
-(defrecord PlayState [player state])
-(def initial-play-state (PlayState. :a 0))
+(defrecord PlayState [player feedback state])
+(def initial-play-state (PlayState. :a "" 0))
 
 (defrecord Game [game]
   game/IGame
@@ -20,16 +20,49 @@
       (when (= (:state (:play-state gm)) (:target (:settings gm)))
         (game/next-player this))))
 
+  (get-status
+    [this]
+    (let [gm @(:game this)
+          settings (:settings gm)
+          play-state (:play-state gm)
+          pa (= (:player play-state) :a)
+          gover (game/is-over? this)
+          over-class (if gover " pulsed" "")]
+      (prn (:players settings))
+      (if (= (:players settings) 1)
+        [over-class (cond
+                      (= gover :a) :you-win
+                      (= gover :b) :al-win
+                      :else (if pa :yours :als))]
+        [over-class (cond
+                      (= gover :a) :b-win
+                      (= gover :b) :a-win
+                      :else (if pa :bs-turn :as-turn))])))
+
   (next-player [this]
     (if (= :a (:player (:play-state @(:game this)))) :b :a))
 
+  (player-move [this move]
+    (when (game/player-can-move? this)
+      (hist/push-history! (:play-state @(:game this)))
+                                        ; the move is the index of the pad the player clicked on
+      (game/commit-play this move)
+      #_(let [move 2]
+          (swap! (:game this) assoc-in [:play-state :feedback] (str "You built "
+                                                                    move " bridge"
+                                                                    (if (> move 1) "s." "."))))
+      ))
+
   (commit-play [this new-play]
-    (swap! (:game this) assoc :play-state (PlayState. (game/next-player this) new-play)))
+    (swap! (:game this) assoc :play-state (PlayState. (game/next-player this) "" new-play))
+    (if (and (not (game/is-over? this)) (game/is-computer-turn? this))
+      (game/schedule-computer-turn this)
+      ))
 
   (reset-game [this]
     (let [game-state (:game this)]
       (hist/empty-history!)
-      (swap! game-state assoc :play-state initial-play-state)))
+      (swap! game-state assoc-in [:play-state :state] 0)))
 
   (is-computer-turn?
     [this]
@@ -43,13 +76,44 @@
     (not (or (game/is-computer-turn? this) (game/is-over? this))))
 
   (play-computer-turn
-    [this optimal-outcome]
-    (game/commit-play this optimal-outcome))
+    [this]
+    (hist/push-history! (:play-state @(:game this)))
+    (game/commit-play this (game/optimal-outcome this)))
 
   (schedule-computer-turn
-    [this think-time optimal-outcome]
-    (util/delayed-call think-time (game/play-computer-turn this optimal-outcome)))
+    [this]
+    (let [move (- (game/optimal-outcome this) (:state (:play-state @(:game this))))]
+      (swap! (:game this) assoc-in [:play-state :feedback] (str "Computer will build "
+                                                                move " bridge"
+                                                                (if (> move 1) "s." "."))))
+    (util/delayed-call (:think-time (:settings @(:game this))) #(game/play-computer-turn this)))
 
+  (followers
+    [this state]
+    (let [gm @(:game this)
+          settings (:settings gm)
+          target (:target settings)
+          limit (:limit settings)]
+      (if (set? state)
+        (set (mapcat #(game/followers this %) state))
+        (set (map #(+ state %) (range 1 (inc (min (- target state) limit))))))))
+
+  (heap-equivalent
+    [this]
+    (let [gm @(:game this)
+          settings (:settings gm)
+          target (:target settings)
+          limit (:limit settings)
+          state (:state (:play-state gm))]
+      (mod (- target state) (inc limit))))
+
+  (optimal-outcome [this]
+    (let [gm @(:game this)
+          state (:state (:play-state gm))
+          sum (game/heap-equivalent this)]
+      (if (zero? sum)
+        (inc state)
+        (+ sum state))))
   )
 
 (defonce Gotit (->Game (atom {:settings initial-settings

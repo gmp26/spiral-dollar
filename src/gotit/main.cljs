@@ -6,14 +6,12 @@
 
                [generic.components :as comp]
                [gotit.common :as common]
-               [gotit.rules :as rules]
                [cljsjs.jquery :as jq]
                [cljsjs.bootstrap :as bs]
                [events.svg :as esg]
                ))
 
-
-(.log js/console (util/el "main-app"))
+(enable-console-print!)
 
 ;;;
 ;; ui config
@@ -27,8 +25,8 @@
                :als   "My turn"
                :as-turn "Blue's turn"
                :bs-turn "Red's turn"
-               :you-win "Well done! You won"
-               :al-win "Oops! You lost"
+               :you-win "You win!"
+               :al-win "Computer wins!"
                :a-win "Blue won!"
                :b-win "Red won!"
                :draw  "It's a draw!"
@@ -40,12 +38,12 @@
               :draw "rgb(74, 157, 97)"
               })
 
-(def message-colours {:yours :a
-                      :als   :b
+(def message-colours {:yours :b
+                      :als   :a
                       :as-turn :a
                       :bs-turn :b
-                      :you-win :a
-                      :al-win :b
+                      :you-win :b
+                      :al-win :a
                       :a-win :a
                       :b-win :b
                       :draw :draw
@@ -66,7 +64,7 @@
 (defn change-player-count
   "change to 1-player or 2-player mode"
   [count]
-  (swap! common/Gotit update-in :play-state :players #(if (= % 1) 2 1))
+  (swap! (:game common/Gotit) assoc-in [:settings :players] count)
   (game/reset-game common/Gotit))
 
 (defn one-player [event]
@@ -93,11 +91,7 @@
 ;;;;;;;; Game art ;;;;;;;;
 
 (defn pad-click [event pad-index]
-  (prn "you clicked on " pad-index)
-  (when (game/player-can-move? common/Gotit)                  ;(not (game/is-computer-turn? common/Gotit))
-    (hist/push-history! (:play-state @(:game common/Gotit)))
-    (game/commit-play common/Gotit pad-index)
-    )
+  (game/player-move common/Gotit pad-index)
   )
 
 (defn other-player [player]
@@ -106,7 +100,7 @@
 (defn reached?
   "look in history to discover whether a play-state has been reached"
   [play-state]
-  ((set (:undo @hist/history)) play-state))
+  ((set (map #(dissoc % :feedback) (:undo @hist/history))) (dissoc play-state :feedback)))
 
 (defn pads-reached-by [view pads player]
   (map
@@ -120,7 +114,7 @@
                    } "\uf041"]) ; map-marker
    (keep-indexed (fn [index point]
                    (when (reached? (common/PlayState.
-                                    player index))
+                                    player ""  index))
                      point))
                  pads)))
 
@@ -223,9 +217,10 @@
                              )
 
        ;; all islands
-       (map-indexed #(comp/pad view %2 {:fill (if (< %1 (+ state limit 1))
-                                                   "#ffcc00"
-                                                   "#77ccee")
+       (map-indexed #(comp/pad view %2 {:fill (cond
+                                                (<= %1 state) "rgba(255, 160, 0, 0.8)"
+                                                (< %1 (+ state limit 1)) "#ffcc00"
+                                                :else "rgba(255, 160, 0, 0.6)")
                                         :stroke "none"
                                         :style {:pointer-events (if (and (> %1 state) (< %1 (+ state limit 1))) "auto" "none")}
                                         :n %1} (fn [event] (pad-click event %1))) pads)
@@ -239,23 +234,33 @@
        ;; islands reached by red
        (pads-reached-by view pads :a)
 
-       ;; Number islands
-       (show-numbers view pads)
-
        ;; Current position of player
        (show-player view pads)
 
+       ;; Number islands
+       (show-numbers view pads)
+
        ])]
    ])
+
+(defn new-pad-count [event]
+  (.stopPropagation event)
+  (.preventDefault event)
+  (swap! (:game common/Gotit) assoc-in [:settings :target] (.parseInt js/window (.-value (.-target event)))))
+
+(defn new-limit [event]
+  (.stopPropagation event)
+  (.preventDefault event)
+  (swap! (:game common/Gotit) assoc-in [:settings :limit] (.parseInt js/window (.-value (.-target event)))))
 
 (rum/defc settings-modal < rum/reactive []
   (let [active (fn [players player-count]
                  (if (= player-count players) "active" ""))
         game (rum/react (:game common/Gotit))
         stings (:settings game)]
-    [:#settings..modal.fade {:tab-index "-1"
-                      :role "dialog"
-                      :aria-labelledby "mySmallModalLabel"}
+    [:#settings.container.modal.fade {:tab-index "-1"
+                             :role "dialog"
+                             :aria-labelledby "mySmallModalLabel"}
      [:.modal-dialog.modal-sm
       [:.modal-content
        [:.modal-header
@@ -263,18 +268,43 @@
                         :data-dismiss "modal"
                         :aria-label "Close"
                         }
-         [:span {:aria-hidden "true"} "x"]]
+         [:span.fa.fa-times {:aria-hidden "true"} ]]
         [:h4.modal-title "Settings"]]
-       [:button.btn.btn-default {:type "button" :class (active stings 1)
-                                 :key "1"
-                                 :on-click one-player
-                                 :on-touch-start one-player}
-        "1 player"]
-       [:button {:type "button"
-                 :class (str "btn btn-default " (active stings 2))
-                 :key "2"
-                 :on-click two-player
-                 :on-touch-start two-player} "2 player"]]]])  )
+
+       [:form.form-horizontal
+        [:form-group
+
+         [:.row {:style {:padding "20px"}}
+
+          [:label.col-md-6 {:for "p1"} "Game mode"]
+          [:.btn-group.col-sm-6
+           [:button.btn.btn-default.dropdown-toggle
+            {:type "button"
+             :data-toggle "dropdown"
+             :aria-haspopup "true"
+             :aria-expanded "false"}
+            (if (= 1 (:players (:settings game))) "Play the computer " "Play an opponent ")
+            [:span.caret]]
+           [:ul.dropdown-menu
+            [:li [:a {:href "#" :on-click one-player} "Play the computer"]]
+            [:li [:a {:href "#" :on-click two-player} "Play an opponent"]]]]]
+
+         [:.row {:style {:padding "20px"}}
+          [:label.col-sm-6 {:for "p2"} "How many islands? "]
+          [:input.col-sm--3 {:type "number"
+                             :on-change new-pad-count
+                             :min 10
+                             :max 40
+                             :style {:width "200px"}
+                             :value (:target (:settings game))}]]
+         [:.row {:style {:padding "20px"}}
+          [:label.col-sm-6 {:for "p2"} "How many bridges per turn? "]
+          [:input.col-sm-3 {:type "number"
+                             :on-change new-limit
+                             :min 1
+                             :max 6
+                             :value (:limit (:settings game))}]]
+         ]]]]])  )
 
 (defn open-settings [event]
   (prn "open-modal called"))
@@ -312,29 +342,15 @@
       [:span {:class "fa fa-repeat"}]]]
      ))
 
-(defn get-status
-  "derive win/lose/turn status"
-  [stings play]
-  (let [pa (= (:player stings) :a)
-        gover (game/is-over? common/Gotit)
-        over-class (if gover " pulsed" "")]
-    (if (= (:players stings) 1)
-      [over-class (cond
-                    (= gover :a) :al-win
-                    (= gover :b) :you-win
-                    :else (if pa :yours :als))]
-      [over-class (cond
-                    (= gover :a) :b-win
-                    (= gover :b) :a-win
-                    :else (if pa :as-turn :bs-turn))])))
-
 (rum/defc status-bar
   "render top status bar"
   [stings play]
-  (let [[over-class status] (get-status stings play)]
+  (let [[over-class status] (game/get-status common/Gotit)]
+    (prn status)
     [:div {:style {:height "20px"}}
      [:p {:class (str "status " over-class)
-          :style {:background-color (get-fill status)} :key "b4"} (get-message status)
+          :style {:width "240px"
+                  :background-color (get-fill status)} :key "b4"} (get-message status)
       [:button {:type "button"
                 :class "btn btn-danger"
                 :style {:display "inline"
@@ -373,6 +389,17 @@
     " Be the first to reach the treasure marked with a cross. "
     (when debug? (show-game-state))]])
 
+(rum/defc feedback < rum/reactive []
+  (let [message (:feedback (:play-state (rum/react (:game common/Gotit))))]
+    [:div {:style {:padding "0px 20px"
+                   :position "relative"
+                   :top "-50px"}}
+     [:.alert {:style {:background-color "#437D9B"
+                       :color "#ffffff"
+                       :height "40px"
+                       :display (if (= message "") "none" "block")}}
+      message]]))
+
 (rum/defc game-container  < rum/reactive
   "the game container mounted onto the html game element"
   []
@@ -384,9 +411,10 @@
       [:p {:id "header"} (:title (:settings game))]
       (tool-bar play)
       (status-bar play)]
-     (help true)
+     (help false)
      (svg-container play)
-     (footer)
+     (feedback)
+     ;(footer)
 ]))
 
 
