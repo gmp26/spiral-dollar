@@ -18,6 +18,10 @@
                  :undo (conj (:undo %) play)
                  :redo [])))
 
+(defn peek-history! []
+  "return the top of the ubdo stack, or nil"
+  (peek (:undo @history)))
+
 (defn undo!
   "pop history to the previous move"
   []

@@ -48,6 +48,13 @@
                                    :output-to  "resources/public/js/compiled/devcards.js"
                                    :output-dir "resources/public/js/compiled/devcards_out"
                                    :source-map-timestamp true }}
+                       {:id "min"
+                        :source-paths ["src"]
+                        :compiler {:main       "gotit.main"
+                                   :externs ["resources/externs/svg.js"]
+                                   :asset-path "js/compiled/out"
+                                   :output-to  "resources/public/js/compiled/gotit.js"
+                                   :optimizations :advanced}}
                        ]
               }
 
@@ -64,10 +71,4 @@
                                    :output-to  "resources/public/js/compiled/gotit.js"
                                    :output-dir "resources/public/js/compiled/gotit"
                                    :source-map-timestamp true }}
-                       {:id "prod"
-                        :source-paths ["src"]
-                        :compiler {:main       "gotit.core"
-                                   :externs ["resources/externs/svg.js"]
-                                   :asset-path "js/compiled/out"
-                                   :output-to  "resources/public/js/compiled/sprague_grundy.js"
-                                   :optimizations :advanced}})
+)

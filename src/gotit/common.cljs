@@ -3,11 +3,26 @@
               [generic.util :as util]
               [generic.history :as hist]))
 
+;; range validation
+(def min-target 10)
+(def max-target 40)
+(def min-limit 1)
+(def max-limit 6)
+(def min-players 1)
+(def max-players 2)
+
+(defn check-target [t]
+  (and (not (js.isNaN t)) (>= t min-target) (<= t max-target)))
+(defn check-limit [l]
+  (and (not (js.isNaN l))(>= l min-limit) (<= l max-limit)))
+(defn check-players [p]
+  (and (not (js.isNaN p))(>= p min-players) (<= p max-players)))
+
 ;; will be created to calculate svg screen transform
 (defonce svg-point (atom false))
 
 (defrecord Settings [title start target limit think-time players])
-(def initial-settings (Settings. "Got it islands!" 0 23 4 2000 1))
+(def initial-settings (Settings. "Got it island!" 0 23 4 2000 1))
 
 (defrecord PlayState [player feedback state])
 (def initial-play-state (PlayState. :a "" 0))
@@ -28,7 +43,6 @@
           pa (= (:player play-state) :a)
           gover (game/is-over? this)
           over-class (if gover " pulsed" "")]
-      (prn (:players settings))
       (if (= (:players settings) 1)
         [over-class (cond
                       (= gover :a) :you-win
@@ -50,19 +64,17 @@
       #_(let [move 2]
           (swap! (:game this) assoc-in [:play-state :feedback] (str "You built "
                                                                     move " bridge"
-                                                                    (if (> move 1) "s." "."))))
-      ))
+                                                                    (if (> move 1) "s." "."))))))
 
   (commit-play [this new-play]
     (swap! (:game this) assoc :play-state (PlayState. (game/next-player this) "" new-play))
     (if (and (not (game/is-over? this)) (game/is-computer-turn? this))
-      (game/schedule-computer-turn this)
-      ))
+      (game/schedule-computer-turn this)))
 
   (reset-game [this]
     (let [game-state (:game this)]
       (hist/empty-history!)
-      (swap! game-state assoc-in [:play-state :state] 0)))
+      (swap! game-state assoc :play-state (PlayState. :a "" 0))))
 
   (is-computer-turn?
     [this]
@@ -113,8 +125,7 @@
           sum (game/heap-equivalent this)]
       (if (zero? sum)
         (inc state)
-        (+ sum state))))
-  )
+        (+ sum state)))))
 
 (defonce Gotit (->Game (atom {:settings initial-settings
                               :play-state initial-play-state})))

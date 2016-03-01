@@ -3,8 +3,8 @@
                [generic.game :as game]
                [generic.util :as util]
                [generic.history :as hist]
-
                [generic.components :as comp]
+               [gotit.routing :as routing]
                [gotit.common :as common]
                [cljsjs.jquery :as jq]
                [cljsjs.bootstrap :as bs]
@@ -80,13 +80,18 @@
   [event]
   (.preventDefault event)
   (hist/undo!)
+  (when-let [undo-peek (hist/peek-history!)]
+    (swap! (:game common/Gotit) assoc :play-state undo-peek))
   )
 
 (defn redo
   "redo button handler"
   [event]
   (.preventDefault event)
-  (hist/redo!))
+  (hist/redo!)
+  (when-let [undo-peek (hist/peek-history!)]
+    (swap! (:game common/Gotit) assoc :play-state undo-peek))
+)
 
 ;;;;;;;; Game art ;;;;;;;;
 
@@ -99,24 +104,25 @@
 
 (defn reached?
   "look in history to discover whether a play-state has been reached"
-  [play-state]
-  ((set (map #(dissoc % :feedback) (:undo @hist/history))) (dissoc play-state :feedback)))
+  [history play-state]
+  ((set (map #(dissoc % :feedback) (:undo history))) (dissoc play-state :feedback)))
 
-(defn pads-reached-by [view pads player]
-  (map
-   #(let [p (esg/xy->viewport view %)]
-      ;; render flag
-      [:text.numb {:x (- (first p) 15)
-                   :y (+  (second p) 10)
-                   :font-family "FontAwesome"
-                   :font-size "30"
-                   :fill (player colours)
-                   } "\uf041"]) ; map-marker
-   (keep-indexed (fn [index point]
-                   (when (reached? (common/PlayState.
-                                    player ""  index))
-                     point))
-                 pads)))
+(rum/defc pads-reached-by < rum/reactive [view pads player]
+  [:g
+   (map
+    #(let [p (esg/xy->viewport view %)]
+       ;; render flag
+       [:text.numb {:x (- (first p) 15)
+                    :y (+  (second p) 10)
+                    :font-family "FontAwesome"
+                    :font-size "30"
+                    :fill (player colours)
+                    } "\uf041"]) ; map-marker
+    (keep-indexed (fn [index point]
+                    (when (reached? (rum/react hist/history) (common/PlayState.
+                                        player ""  index))
+                      point))
+                  pads))])
 
 (defn show-player [view pads]
   (let [play-state (:play-state @(:game common/Gotit))
@@ -178,7 +184,7 @@
 ;;         :on-touch-move esg/handle-move-line
 ;;         :on-touch-end esg/handle-end-line
          }
-   [:g {:transform "translate(-40, -20)"}
+   [:g {:transform "translate(-20, -20)"}
     (let [game (rum/react (:game common/Gotit))
           play-state (:play-state game)
           state (:state play-state)
@@ -293,24 +299,21 @@
           [:label.col-sm-6 {:for "p2"} "How many islands? "]
           [:input.col-sm--3 {:type "number"
                              :on-change new-pad-count
-                             :min 10
-                             :max 40
+                             :min common/min-target
+                             :max common/max-target
                              :style {:width "200px"}
                              :value (:target (:settings game))}]]
          [:.row {:style {:padding "20px"}}
           [:label.col-sm-6 {:for "p2"} "How many bridges per turn? "]
           [:input.col-sm-3 {:type "number"
                              :on-change new-limit
-                             :min 1
-                             :max 6
-                             :value (:limit (:settings game))}]]
-         ]]]]])  )
+                             :min common/min-limit
+                             :max common/max-limit
+                             :value (:limit (:settings game))}]]]]]]]))
 
-(defn open-settings [event]
-  (prn "open-modal called"))
+(defn open-settings [event])
 
-(defn close-settings [event]
-  (prn "close settings called"))
+(defn close-settings [event])
 
 (rum/defc tool-bar < rum/reactive []
   (let [active (fn [players player-count]
@@ -346,7 +349,6 @@
   "render top status bar"
   [stings play]
   (let [[over-class status] (game/get-status common/Gotit)]
-    (prn status)
     [:div {:style {:height "20px"}}
      [:p {:class (str "status " over-class)
           :style {:width "240px"
@@ -385,7 +387,7 @@
     "On your turn you can build up to "
     [:b (:limit (:settings (rum/react (:game common/Gotit)))) " bridges"]
     " over the shallows by "
-    [:b " tapping the island you want to reach."]
+    [:b " tapping the yellow island you want to reach."]
     " Be the first to reach the treasure marked with a cross. "
     (when debug? (show-game-state))]])
 
