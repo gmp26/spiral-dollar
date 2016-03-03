@@ -249,24 +249,30 @@
        ])]
    ])
 
-(defn new-pad-count [event]
+(defn write-validated-int [event min-val max-val ref cursor]
   (.stopPropagation event)
   (.preventDefault event)
-  (swap! (:game common/Gotit) assoc-in [:settings :target] (.parseInt js/window (.-value (.-target event)))))
+  (let [value (.parseInt js/window (.-value (.-target event)))
+        new-value (cond
+                    (< value min-val) min-val
+                    (> value max-val) max-val
+                    :else value)]
+    (swap! ref assoc-in cursor new-value)))
+
+(defn new-pad-count [event]
+  (write-validated-int event common/min-target common/max-target (:game common/Gotit) [:settings :target]))
 
 (defn new-limit [event]
-  (.stopPropagation event)
-  (.preventDefault event)
-  (swap! (:game common/Gotit) assoc-in [:settings :limit] (.parseInt js/window (.-value (.-target event)))))
+  (write-validated-int event common/min-limit common/max-limit (:game common/Gotit) [:settings :limit]))
 
 (rum/defc settings-modal < rum/reactive []
   (let [active (fn [players player-count]
                  (if (= player-count players) "active" ""))
         game (rum/react (:game common/Gotit))
         stings (:settings game)]
-    [:#settings.container.modal.fade {:tab-index "-1"
-                             :role "dialog"
-                             :aria-labelledby "mySmallModalLabel"}
+    [:#settings.modal.fade {:tab-index "-1"
+                            :role "dialog"
+                            :aria-labelledby "mySmallModalLabel"}
      [:.modal-dialog.modal-sm
       [:.modal-content
        [:.modal-header
@@ -277,13 +283,13 @@
          [:span.fa.fa-times {:aria-hidden "true"} ]]
         [:h4.modal-title "Settings"]]
 
-       [:form.form-horizontal
+       [:form.form-horizontal {:style {:padding "20px"}}
         [:form-group
 
-         [:.row {:style {:padding "20px"}}
+         [:.row {:style {:padding "20px 0"}}
 
-          [:label.col-md-6 {:for "p1"} "Game mode"]
-          [:.btn-group.col-sm-6
+          [:label.col-sm-4 {:for "p1"} "Game mode"]
+          [:.btn-group.col-sm-8
            [:button.btn.btn-default.dropdown-toggle
             {:type "button"
              :data-toggle "dropdown"
@@ -295,21 +301,25 @@
             [:li [:a {:href "#" :on-click one-player} "Play the computer"]]
             [:li [:a {:href "#" :on-click two-player} "Play an opponent"]]]]]
 
-         [:.row {:style {:padding "20px"}}
-          [:label.col-sm-6 {:for "p2"} "How many islands? "]
-          [:input.col-sm--3 {:type "number"
-                             :on-change new-pad-count
-                             :min common/min-target
-                             :max common/max-target
-                             :style {:width "200px"}
-                             :value (:target (:settings game))}]]
-         [:.row {:style {:padding "20px"}}
-          [:label.col-sm-6 {:for "p2"} "How many bridges per turn? "]
-          [:input.col-sm-3 {:type "number"
-                             :on-change new-limit
-                             :min common/min-limit
-                             :max common/max-limit
-                             :value (:limit (:settings game))}]]]]]]]))
+         [:.row {:style {:padding "20px 0"}}
+          [:label.col-sm-4 {:for "p2"} "How many islands? "]
+          [:input.col-sm-6 {:type "number"
+                            :style {:zoom 2
+                                    :width "90%"
+                                    }
+                            :pattern "\\d*"
+                            :inputmode "numeric"
+                            :on-change new-pad-count
+                            :value (:target (:settings game))}]]
+         [:.row {:style {:padding "20px 0"}}
+          [:label.col-sm-4 {:for "p2"} "How many bridges per turn? "]
+          [:input.col-sm-6 {:style {:zoom 2
+                                    :width "90%"}
+                            :type "number"
+                            :pattern "\\d*"
+                            :inputmode "numeric"
+                            :on-change new-limit
+                            :value (:limit (:settings game))}]]]]]]]))
 
 (defn open-settings [event])
 
