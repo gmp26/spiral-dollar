@@ -79,19 +79,21 @@
   "undo button handler"
   [event]
   (.preventDefault event)
-  (hist/undo!)
-  (when-let [undo-peek (hist/peek-history!)]
-    (swap! (:game common/Gotit) assoc :play-state undo-peek))
-  )
+  (swap! (:game common/Gotit) #(assoc % :play-state (hist/undo! (:play-state %)))))
 
 (defn redo
   "redo button handler"
   [event]
   (.preventDefault event)
+  (swap! (:game common/Gotit) #(assoc % :play-state (hist/redo! (:play-state %)))))
+
+#_(defn redo
+  "redo button handler"
+  [event]
+  (.preventDefault event)
   (hist/redo!)
   (when-let [undo-peek (hist/peek-history!)]
-    (swap! (:game common/Gotit) assoc :play-state undo-peek))
-)
+    (swap! (:game common/Gotit) assoc :play-state undo-peek)))
 
 ;;;;;;;; Game art ;;;;;;;;
 

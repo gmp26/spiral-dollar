@@ -58,15 +58,9 @@
   (player-move [this move]
     (when (game/player-can-move? this)
       (hist/push-history! (:play-state @(:game this)))
-                                        ; the move is the index of the pad the player clicked on
-      (game/commit-play this move)
-      #_(let [move 2]
-          (swap! (:game this) assoc-in [:play-state :feedback] (str "You built "
-                                                                    move " bridge"
-                                                                    (if (> move 1) "s." "."))))))
+      (game/commit-play this move)))
 
   (commit-play [this new-play]
-    (prn "committing")
     (swap! (:game this) assoc :play-state (PlayState. (game/next-player this) "" new-play))
     (if (not (game/is-over? this))
       (if (game/is-computer-turn? this)
@@ -95,7 +89,6 @@
 
   (schedule-computer-turn
     [this]
-    (prn "schedule computer turn")
     (let [move (- (game/optimal-outcome this) (:state (:play-state @(:game this))))]
       (swap! (:game this) assoc-in [:play-state :feedback] (str "Computer will build "
                                                                 move " bridge"
