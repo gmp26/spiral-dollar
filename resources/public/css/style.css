@@ -98,3 +98,33 @@ body {
 .numb {
     pointer-events: none;
 }
+
+/* spinner buttons and numeric input */
+.spinner button {
+    background-color: #048;
+    font-size: 18px;
+    color: white;
+    width: 40px;
+    vertical-align: middle
+    /*border-color: teal; */
+    cursor: pointer;
+}
+
+input.num {
+    font-size: 30px;
+    width: 60px;
+    background-color: "#ffffff";
+    border: none;
+    box-sizing: border-box;
+    text-align: right;
+}
+
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+    -moz-appearance:textfield;
+}

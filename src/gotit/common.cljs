@@ -32,8 +32,7 @@
 
   (is-over? [this]
     (let [gm @(:game this)]
-      (when (= (:state (:play-state gm)) (:target (:settings gm)))
-        (game/next-player this))))
+      (= (:state (:play-state gm)) (:target (:settings gm)))))
 
   (get-status
     [this]
@@ -67,9 +66,11 @@
                                                                     (if (> move 1) "s." "."))))))
 
   (commit-play [this new-play]
+    (prn "committing")
     (swap! (:game this) assoc :play-state (PlayState. (game/next-player this) "" new-play))
-    (if (and (not (game/is-over? this)) (game/is-computer-turn? this))
-      (game/schedule-computer-turn this)))
+    (if (not (game/is-over? this))
+      (if (game/is-computer-turn? this)
+        (game/schedule-computer-turn this))))
 
   (reset-game [this]
     (let [game-state (:game this)]
@@ -94,6 +95,7 @@
 
   (schedule-computer-turn
     [this]
+    (prn "schedule computer turn")
     (let [move (- (game/optimal-outcome this) (:state (:play-state @(:game this))))]
       (swap! (:game this) assoc-in [:play-state :feedback] (str "Computer will build "
                                                                 move " bridge"

@@ -249,21 +249,44 @@
        ])]
    ])
 
-(defn write-validated-int [event min-val max-val ref cursor]
+
+(defn validated-int [value min-val max-val]
+  (cond
+    (< value min-val) min-val
+    (> value max-val) max-val
+    :else value))
+
+(defn handle-spinner
+  "spinner clicked, change @ref.cursor using op"
+  [event ref cursor op]
+  (swap! ref update-in cursor op)
+  (.preventDefault event)
+  (.stopPropagation event))
+
+(defn handle-inc-target [event]
+  (handle-spinner event (:game common/Gotit) [:settings :target] #(validated-int (inc %) common/min-target common/max-target)))
+
+(defn handle-dec-target [event]
+  (handle-spinner event (:game common/Gotit) [:settings :target] #(validated-int (dec %) common/min-target common/max-target)))
+
+(defn handle-inc-limit [event]
+  (handle-spinner event (:game common/Gotit) [:settings :limit] #(validated-int (inc %) common/min-limit common/max-limit)))
+
+(defn handle-dec-limit [event]
+  (handle-spinner event (:game common/Gotit) [:settings :limit] #(validated-int (dec %) common/min-limit common/max-limit)))
+
+(defn handle-int [event min-val max-val ref cursor]
   (.stopPropagation event)
   (.preventDefault event)
-  (let [value (.parseInt js/window (.-value (.-target event)))
-        new-value (cond
-                    (< value min-val) min-val
-                    (> value max-val) max-val
-                    :else value)]
-    (swap! ref assoc-in cursor new-value)))
+  (let [value (.parseInt js/window (.-value (.-target event)))]
+    (swap! ref assoc-in cursor (validated-int value min-val max-val))
+    ))
 
 (defn new-pad-count [event]
-  (write-validated-int event common/min-target common/max-target (:game common/Gotit) [:settings :target]))
+  (handle-int event common/min-target common/max-target (:game common/Gotit) [:settings :target]))
 
 (defn new-limit [event]
-  (write-validated-int event common/min-limit common/max-limit (:game common/Gotit) [:settings :limit]))
+  (handle-int event common/min-limit common/max-limit (:game common/Gotit) [:settings :limit]))
 
 (rum/defc settings-modal < rum/reactive []
   (let [active (fn [players player-count]
@@ -303,23 +326,28 @@
 
          [:.row {:style {:padding "20px 0"}}
           [:label.col-sm-4 {:for "p2"} "How many islands? "]
-          [:input.col-sm-6 {:type "number"
-                            :style {:zoom 2
-                                    :width "90%"
-                                    }
-                            :pattern "\\d*"
-                            :inputmode "numeric"
-                            :on-change new-pad-count
-                            :value (:target (:settings game))}]]
+          [:span.spinner.col-sm-8
+           [:button.up.no-select {:on-click handle-inc-target
+                                  :on-touch-start handle-inc-target} "+"]
+           [:button.down.no-select {:on-click handle-dec-target
+                                    :on-touch-start handle-dec-target} "-"]
+           [:input.num {:type "number"
+                        :pattern "\\d*"
+                        :input-mode "numeric"
+                        :on-change new-pad-count
+                        :value (:target (:settings game))}]]]
          [:.row {:style {:padding "20px 0"}}
           [:label.col-sm-4 {:for "p2"} "How many bridges per turn? "]
-          [:input.col-sm-6 {:style {:zoom 2
-                                    :width "90%"}
-                            :type "number"
-                            :pattern "\\d*"
-                            :inputmode "numeric"
-                            :on-change new-limit
-                            :value (:limit (:settings game))}]]]]]]]))
+          [:span.spinner.col-sm-8
+           [:button.up.no-select {:on-click handle-inc-limit
+                                  :on-touch-start handle-inc-limit} "+"]
+           [:button.down.no-select {:on-click handle-dec-limit
+                                    :on-touch-start handle-dec-limit} "-"]
+           [:input.num {:type "number"
+                        :pattern "\\d*"
+                        :input-mode "numeric"
+                        :on-change new-limit
+                        :value (:limit (:settings game))}]]]]]]]]))
 
 (defn open-settings [event])
 
