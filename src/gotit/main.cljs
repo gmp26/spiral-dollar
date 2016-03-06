@@ -453,7 +453,7 @@
       [:p {:id "header"} (:title (:settings game))]
       (tool-bar play)
       (status-bar play)]
-     (help true)
+     (help false)
      (svg-container play)
      (feedback)
      ;(footer)
