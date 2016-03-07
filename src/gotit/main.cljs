@@ -7,7 +7,6 @@
                [generic.viewer :as iview :refer [IViewer]]
                [gotit.routing :as routing]
                [gotit.common :as common]
-               [gotit.spiral-view :as view :refer [Game-view]]
                [cljsjs.jquery :as jq]
                [cljsjs.bootstrap :as bs]
                [events.svg :as esg]
@@ -182,7 +181,7 @@
   "render top status bar"
   [stings play]
   (let [[over-class status] (game/get-status common/Gotit)
-        viewer (rum/react Game-view)]
+        viewer (rum/react routing/Game-view)]
     [:div {:style {:height "20px"}}
      [:p {:class (str "status " over-class)
           :style {:width "240px"
@@ -248,7 +247,7 @@
       (tool-bar play)
       (status-bar play)]
      (help false)
-     (iview/game-viewer (rum/react Game-view) play)
+     (iview/game-viewer (rum/react routing/Game-view) play)
      (feedback)
      ;(footer)
 ]))

@@ -3,10 +3,15 @@
               [goog.history.EventType :as EventType]
               [secretary.core :as secretary :refer-macros [defroute]]
               [gotit.common :as common]
+              [gotit.spiral-view :as spiral]
               )
     (:import goog.History))
 
 (enable-console-print!)
+
+(prn (spiral/->Spiral-view.))
+
+(defonce Game-view (atom (spiral/Spiral-view.)))
 
 ;;
 ;; basic hash routing to configure some game options
