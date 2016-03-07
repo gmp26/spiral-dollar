@@ -4,13 +4,13 @@
               [secretary.core :as secretary :refer-macros [defroute]]
               [gotit.common :as common]
               [gotit.spiral-view :as spiral]
+              [gotit.number-view :as numeric]
               )
     (:import goog.History))
 
 (enable-console-print!)
 
-(prn (spiral/->Spiral-view.))
-
+;(defonce Game-view (atom (numeric/Number-view.)))
 (defonce Game-view (atom (spiral/Spiral-view.)))
 
 ;;

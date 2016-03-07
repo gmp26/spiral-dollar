@@ -1,5 +1,4 @@
 body {
-    max-width: 600px !important;
     margin: auto !important;
     background-color:#667274  !important;
     /*background-color: white;*/
@@ -26,7 +25,8 @@ body {
     font-size: 1.8em;
     padding: 0px;
     background-color: #0E4653;
-    margin: 0;
+    text-align: center;
+    //margin: 0;
 }
 
 #footer {

@@ -55,9 +55,6 @@
   (game/player-move common/Gotit pad-index)
   )
 
-(defn other-player [player]
-    (if (= :a player) :b :a))
-
 (defn reached?
   "look in history to discover whether a play-state has been reached"
   [history play-state]

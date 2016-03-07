@@ -152,7 +152,7 @@
                  (if (= player-count players) "active" ""))
         game (rum/react (:game common/Gotit))
         stings (:settings game)]
-    [:div {:class "btn-group toolbar"}
+    [:.btn-group.toolbar.pull-right
      [:button.btn.btn-default.bs-example-modal-sm
       {:type "button"
        :key 1
@@ -182,19 +182,20 @@
   [stings play]
   (let [[over-class status] (game/get-status common/Gotit)
         viewer (rum/react routing/Game-view)]
-    [:div {:style {:height "20px"}}
-     [:p {:class (str "status " over-class)
-          :style {:width "240px"
-                  :background-color (iview/get-fill viewer status)} :key "b4"} (iview/get-message viewer status)
+    [:div
       [:button {:type "button"
                 :class "btn btn-danger"
                 :style {:display "inline"
                         :clear "none"
-                        :float "right"
                         }
                 :on-click #(game/reset-game common/Gotit)
                 :on-touch-end #(game/reset-game common/Gotit)}
-       [:span {:class "fa fa-refresh"}]]]]))
+       [:span {:class "fa fa-refresh"}]
+       " Restart"]
+     [:p {:class (str "status " over-class)
+          :style {:width "240px"
+                  :background-color (iview/get-fill viewer status)} :key "b4"} (iview/get-message viewer status)
+]]))
 
 (rum/defc footer < rum/reactive []
   "render footer with rules and copyright"
@@ -215,8 +216,10 @@
      [:p (str (rum/react hist/history))]]))
 
 (rum/defc help < rum/reactive [debug?]
-  [:div {:style {:padding "20px"}}
-   [:.alert.alert-info
+  [:div
+   [:h3.center-block
+    {:style {:color "white"
+             :max-width "600px"}}
     "On your turn you can build up to "
     [:b (:limit (:settings (rum/react (:game common/Gotit)))) " bridges"]
     " over the shallows by "
@@ -240,16 +243,17 @@
   []
   (let [game (rum/react (:game common/Gotit))
         play (:play-state game)]
-    [:section {:id "game-container"}
+    [:section.container-fluid {:id "game-container"
+                         :style {:max-width "800px"}}
      (settings-modal)
-     [:div {:class "full-width"}
-      [:p {:id "header"} (:title (:settings game))]
-      (tool-bar play)
-      (status-bar play)]
-     (help false)
-     (iview/game-viewer (rum/react routing/Game-view) play)
-     (feedback)
-     ;(footer)
+     [:div.row ;{:class "full-width"}
+      [:.col-sm-12
+       [:p.center-block {:id "header"} (:title (:settings game))]
+       (tool-bar play)
+       (status-bar play)
+       (help false)]
+      (iview/game-viewer (rum/react routing/Game-view) play)
+      (feedback)]
 ]))
 
 
