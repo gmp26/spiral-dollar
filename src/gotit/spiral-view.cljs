@@ -5,7 +5,6 @@
               [generic.history :as hist]
               [generic.components :as comp]
               [generic.viewer :refer [IViewer]]
-              [gotit.routing :as routing]
               [gotit.common :as common]
               [cljsjs.jquery :as jq]
               [cljsjs.bootstrap :as bs]
@@ -188,19 +187,29 @@
        (show-target view pads)
 
        ;; islands reached by blue
-       (pads-reached-by view pads :b)
+       ;(pads-reached-by view pads :b)
 
        ;; islands reached by red
-       (pads-reached-by view pads :a)
+       ;(pads-reached-by view pads :a)
 
        ;; Current position of player
        (show-player view pads)
 
        ;; Number islands
-       (show-numbers view pads)
+       ;(show-numbers view pads)
 
        ])]
    ])
+
+
+(rum/defc help < rum/reactive []
+  [:div {:style {:padding "20px"}}
+   [:.alert.alert-info
+    "On your turn you can build up to "
+    [:b (:limit (:settings (rum/react (:game common/Gotit)))) " bridges"]
+    " over the shallows by "
+    [:b " tapping the yellow island you want to reach."]
+    " Be the first to reach the treasure marked with a cross. "]])
 
 (defrecord Spiral-view []
   IViewer
@@ -211,5 +220,8 @@
     ((status message-colours) colours))
 
   (game-viewer [this config] (viewer-macro))
+
+  (help-viewer [this]
+    (help))
 
   )

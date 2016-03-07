@@ -21,8 +21,8 @@
 ;; will be created to calculate svg screen transform
 (defonce svg-point (atom false))
 
-(defrecord Settings [title start target limit think-time players])
-(def initial-settings (Settings. "Got it island!" 0 23 4 2000 1))
+(defrecord Settings [title start target limit think-time players viewer])
+(def initial-settings (Settings. "Got it island!" 0 23 4 2000 1 :island))
 
 (defrecord PlayState [player feedback state])
 (def initial-play-state (PlayState. :a "" 0))
@@ -32,7 +32,9 @@
 
   (is-over? [this]
     (let [gm @(:game this)]
-      (= (:state (:play-state gm)) (:target (:settings gm)))))
+      (if (= (:state (:play-state gm)) (:target (:settings gm)))
+        (:player (:play-state gm))
+        false)))
 
   (get-status
     [this]
@@ -61,8 +63,9 @@
       (game/commit-play this move)))
 
   (commit-play [this new-play]
-    (swap! (:game this) assoc :play-state (PlayState. (game/next-player this) "" new-play))
-    (if (not (game/is-over? this))
+    (swap! (:game this) assoc-in [:play-state :state] new-play)
+    (when (not (game/is-over? this))
+      (swap! (:game this) assoc-in [:play-state :player] (game/next-player this))
       (if (game/is-computer-turn? this)
         (game/schedule-computer-turn this))))
 
@@ -90,9 +93,7 @@
   (schedule-computer-turn
     [this]
     (let [move (- (game/optimal-outcome this) (:state (:play-state @(:game this))))]
-      (swap! (:game this) assoc-in [:play-state :feedback] (str "Computer will build "
-                                                                move " bridge"
-                                                                (if (> move 1) "s." "."))))
+      (swap! (:game this) assoc-in [:play-state :feedback] (str "Computer goes " move)))
     (util/delayed-call (:think-time (:settings @(:game this))) #(game/play-computer-turn this)))
 
   (followers

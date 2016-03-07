@@ -7,7 +7,9 @@
                [generic.viewer :as iview :refer [IViewer]]
                [gotit.routing :as routing]
                [gotit.common :as common]
-               [cljsjs.jquery :as jq]
+               [gotit.spiral-view :refer [Spiral-view]]
+               [gotit.number-view :refer [Number-view]]
+              [cljsjs.jquery :as jq]
                [cljsjs.bootstrap :as bs]
                [events.svg :as esg]
                ))
@@ -179,9 +181,9 @@
 
 (rum/defc status-bar < rum/reactive
   "render top status bar"
-  [stings play]
+  [viewer]
   (let [[over-class status] (game/get-status common/Gotit)
-        viewer (rum/react routing/Game-view)]
+]
     [:div
       [:button {:type "button"
                 :class "btn btn-danger"
@@ -215,44 +217,35 @@
      [:p (str (into {} (:play-state game)))]
      [:p (str (rum/react hist/history))]]))
 
-(rum/defc help < rum/reactive [debug?]
-  [:div
-   [:h3.center-block
-    {:style {:color "white"
-             :max-width "600px"}}
-    "On your turn you can build up to "
-    [:b (:limit (:settings (rum/react (:game common/Gotit)))) " bridges"]
-    " over the shallows by "
-    [:b " tapping the yellow island you want to reach."]
-    " Be the first to reach the treasure marked with a cross. "
-    (when debug? (show-game-state))]])
 
 (rum/defc feedback < rum/reactive []
   (let [message (:feedback (:play-state (rum/react (:game common/Gotit))))]
     [:div {:style {:padding "0px 20px"
                    :position "relative"
                    :top "-50px"}}
-     [:.alert {:style {:background-color "#437D9B"
-                       :color "#ffffff"
-                       :height "40px"
-                       :display (if (= message "") "none" "block")}}
+     [:p {:style {:color "#ffffff"
+                  :height "40px"
+                  :font-size "18px"
+                  :display (if (= message "") "none" "block")}}
       message]]))
 
 (rum/defc game-container  < rum/reactive
   "the game container mounted onto the html game element"
   []
   (let [game (rum/react (:game common/Gotit))
+        viewer (if (= :number (:viewer (:settings game))) (Number-view.) (Spiral-view.))
         play (:play-state game)]
-    [:section.container-fluid {:id "game-container"
-                         :style {:max-width "800px"}}
+    [:section#game-container.container {:style {:max-width "600px"}}
      (settings-modal)
      [:div.row ;{:class "full-width"}
       [:.col-sm-12
        [:p.center-block {:id "header"} (:title (:settings game))]
        (tool-bar play)
-       (status-bar play)
-       (help false)]
-      (iview/game-viewer (rum/react routing/Game-view) play)
+       (status-bar viewer)
+       (iview/help-viewer viewer)
+       ;(show-game-state)
+       ]
+      (iview/game-viewer viewer play)
       (feedback)]
 ]))
 

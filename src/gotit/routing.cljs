@@ -3,47 +3,118 @@
               [goog.history.EventType :as EventType]
               [secretary.core :as secretary :refer-macros [defroute]]
               [gotit.common :as common]
-              [gotit.spiral-view :as spiral]
-              [gotit.number-view :as numeric]
               )
     (:import goog.History))
 
 (enable-console-print!)
 
-;(defonce Game-view (atom (numeric/Number-view.)))
-(defonce Game-view (atom (spiral/Spiral-view.)))
-
 ;;
 ;; basic hash routing to configure some game options
 ;;
 
+
+
 (secretary/set-config! :prefix "#")
 
 
-(defn dispatching [t l p]
+(defn dispatching [t l p v]
   (let [target (js.parseInt t)
         limit (js.parseInt l)
-        players (js.parseInt p)]
+        players (js.parseInt p)
+        viewer v]
+
+    (prn "viewer " viewer)
     (when (and (common/check-target t) (common/check-limit l) (common/check-players p))
       (swap! (:game common/Gotit) assoc-in [:settings :target] target)
       (swap! (:game common/Gotit) assoc-in [:settings :limit] limit)
-      (swap! (:game common/Gotit) assoc-in [:settings :players] players))))
+      (swap! (:game common/Gotit) assoc-in [:settings :players] players)
+      (swap! (:game common/Gotit) assoc-in [:settings :viewer] viewer)
+      )))
+
+(defroute
+  "/island/:target/:limit/:players" {:as params}
+  (dispatching (:target params)
+               (:limit params)
+               (:players params)
+               :island))
+
+(defroute
+  "/island/:target/:limit" {:as params}
+  (dispatching (:target params)
+               (:limit params)
+               (:players (:settings @(:game common/Gotit)))
+               :island))
+
+(defroute
+  "/island/:target" {:as params}
+  (dispatching (:target params)
+               (:limit (:settings @(:game common/Gotit)))
+               (:players (:settings @(:game common/Gotit)))
+               :island))
+
+(defroute
+  "/island" {:as params}
+  (dispatching (:target (:settings @(:game common/Gotit)))
+               (:limit (:settings @(:game common/Gotit)))
+               (:players (:settings @(:game common/Gotit)))
+               :island))
+
+
+(defroute
+  "/number/:target/:limit/:players" {:as params}
+  (dispatching (:target params)
+               (:limit params)
+               (:players params)
+               :number))
+
+(defroute
+  "/number/:target/:limit" {:as params}
+  (dispatching (:target params)
+               (:limit params)
+               (:players (:settings @(:game common/Gotit)))
+               :number))
+
+(defroute
+  "/number/:target" {:as params}
+  (dispatching (:target params)
+               (:limit (:settings @(:game common/Gotit)))
+               (:players (:settings @(:game common/Gotit)))
+               :number))
+
+(defroute
+  "/number" {:as params}
+  (dispatching (:target params)
+               (:limit (:settings @(:game common/Gotit)))
+               (:players (:settings @(:game common/Gotit)))
+               :number))
 
 (defroute
   "/:target/:limit/:players" {:as params}
-  (dispatching (:target params) (:limit params) (:players params))
-  )
+  (dispatching (:target params)
+               (:limit params)
+               (:players params)
+               :number))
 
 (defroute
   "/:target/:limit" {:as params}
-  (dispatching (:target params) (:limit params) (:players (:settings @(:game common/Gotit))))
-  )
+  (dispatching (:target params)
+               (:limit params)
+               (:players (:settings @(:game common/Gotit)))
+               :number))
 
 (defroute
   "/:target" {:as params}
   (dispatching (:target params)
                (:limit (:settings @(:game common/Gotit)))
-               (:players (:settings @(:game common/Gotit)))))
+               (:players (:settings @(:game common/Gotit)))
+               :number))
+
+(defroute
+  "" {:as params}
+  (dispatching (:target params)
+               (:limit (:settings @(:game common/Gotit)))
+               (:players (:settings @(:game common/Gotit)))
+               :number))
 
 ;; history configuration.
 ;;
