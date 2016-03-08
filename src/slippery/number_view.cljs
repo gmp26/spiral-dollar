@@ -13,7 +13,7 @@
 ;; ui config
 ;;;
 (def view {:vw 620
-           :vh 280
+           :vh 400
            :pad-x 80
            :pad-y 80})
 
@@ -49,6 +49,7 @@
 
 ;;;;;;;; Game art ;;;;;;;;
 
+
 (rum/defc number-in-circle < rum/static [amap value]
   (let [attrs (merge {:cx 0 :cy 0 :r 50 :fill "white" :text-fill "black" :stroke "black"} amap)]
     [:g
@@ -58,8 +59,18 @@
              :fill (:text-fill attrs)
              :font-size 60
              :key 2
-             }
-      value]]))
+             } value]
+]))
+
+
+(rum/defc dropper < rum/static [amap value]
+  [:g
+   (number-in-circle amap value)
+   [:polygon (merge amap {:points (str (- (:cx amap) (* 0.8 (:r amap))) ", " (+ (:cy amap) (:r amap) -16) " "
+                                       (+ (:cx amap) (* 0.8 (:r amap))) ", " (+ (:cy amap) (:r amap) -16) " "
+                                       (:cx amap) "," (+ (:cy amap) (* 1.1 (:r amap) (Math.sqrt 3) )))})]]
+  )
+
 
 (defn move-by [event delta]
   (.stopPropagation event)
@@ -104,31 +115,16 @@
              ;;         :on-touch-move esg/handle-move-line
              ;;         :on-touch-end esg/handle-end-line
              }
-       [:g {:transform "scale(1, 1) translate(-60 30)"}
-        [:text {:x (- (:x origin) 170)
-                :y (- (:y origin) 80)
-                :fill "white"
-                :font-size 40}
-         "Total"]
-        [:text {:x (- (:x origin) 170)
-                :y (+ (:y origin) 20)
-                :fill "white"
-                :font-size 40}
-         "Target"]
-        (number-in-circle {:cx (:x origin)
-                           :cy (- (:y origin) 100)
-                           :r 40
-                           :fill ((if (= (:player play-state) :a) :b :a) colours)
-                           :stroke "none"
-                           :text-fill "white"
-                           } 10)
-        (number-in-circle {:cx (:x origin)
-                           :cy (:y origin)
-                           :r 40
-                           :fill "#e90"
-                           :stroke "none"
-                           :text-fill "white"
-                           } target)
+       [:g
+
+        (dropper {:cx (:x origin)
+                  :cy (- (:y origin) 100)
+                  :r 40
+                  :fill ((if (= (:player play-state) :a) :b :a) colours)
+                  :stroke "none"
+                  :text-fill "white"
+                  } 10)
+
 
         ]
 

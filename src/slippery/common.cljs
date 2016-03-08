@@ -27,6 +27,7 @@
 (defrecord PlayState [player feedback state])
 (def initial-play-state (PlayState. :a "" [3 10 21 30]))
 
+
 (defrecord Game [game]
   game/IGame
 
@@ -112,10 +113,12 @@
     [this]
     (prn "todo: heap-equivalent")
     (let [state (:state (:play-state @(:game this)))
-          limit (:limit (:settings @(:game this)))]
+          limit (:limit (:settings @(:game this)))
+          ]
       (if (empty? state)
         '(0)
-        (let [paired-gaps (partition 2 (conj (vec (gaps state)) nil))]
+        (let [gaps (reverse (cons (first state) (map dec (map - (rest state) state))))
+              paired-gaps (partition 2 (conj (vec gaps) nil))]
           (if (or (nil? limit) (zero? limit))
             (map first paired-gaps)
             (map (comp #(mod % (inc limit)) first) paired-gaps))))))
