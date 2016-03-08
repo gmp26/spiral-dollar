@@ -73,7 +73,7 @@
   (reset-game [this]
     (let [game-state (:game this)]
       (hist/empty-history!)
-      (swap! game-state assoc :play-state initial-play-state)))
+      (swap! game-state assoc :play-state (PlayState. :a "" [3 10 21 30]))))
 
   (is-computer-turn?
     [this]
@@ -108,16 +108,16 @@
         (set (mapcat #(game/followers this %) state))
         (set (map #(+ state %) (range 1 (inc (min (- target state) limit))))))))
 
-  (heap-equivalent
+  #_(heap-equivalent
     "Returns a seq of equivalent nim heaps for a snail game-state"
-    ;; todo:
-    ([this]
+
+    ([state]
      (if (empty? state)
        '(0)
        (map first (partition 2 (conj (vec (gaps state)) nil))))
      )
 
-    #_([limit state]
+    ([limit state]
      (if (empty? state)
        '(0)
        (map (comp #(mod % (inc limit)) first) (partition 2 (conj (vec (gaps state)) nil))))))
