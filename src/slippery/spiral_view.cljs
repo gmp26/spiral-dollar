@@ -77,6 +77,7 @@
                   pads))])
 
 (defn show-player [view pads]
+  ;; todo!
   (let [play-state (:play-state @(:game common/Slippery))
         p (esg/xy->viewport view (get pads (:state play-state)))]
     [:text.numb {:x (- (first p) 15)
@@ -103,7 +104,7 @@
             } "\uf00d"] ;x marks the spot
     ))
 
-(defn show-numbers [view pads]
+#_(defn show-numbers [view pads]
   (let [game @(:game common/Slippery)
         target (:target (:settings game))
         state (:state (:play-state game))]
@@ -143,7 +144,6 @@
           settings (:settings game)
           target (:target settings)
           limit (:limit settings)
-          reached (:reached play-state)
           pad-count (inc target)
           pads (vec (comp/pad-spiral pad-count))]
 
@@ -157,7 +157,9 @@
                               :stroke-dasharray "15 20  5 10"
                               :stroke-linecap "round"}
                              )
-       (comp/render-pad-path view pad-count
+
+       ;; todo:
+       #_(comp/render-pad-path view pad-count
                              0
                              (min target (+ (:limit settings)
                                      state))
@@ -166,7 +168,8 @@
                               :stroke-linecap "round"}
                              )
 
-       ;; render path so far
+
+       ;; todo: render path so far
        (comp/render-pad-path view pad-count
                              0
                              state
@@ -184,19 +187,11 @@
                                         :n %1} (fn [event] (pad-click event %1))) pads)
 
        ;; Target Cross
+       ;; todo:
        (show-target view pads)
-
-       ;; islands reached by blue
-       ;(pads-reached-by view pads :b)
-
-       ;; islands reached by red
-       ;(pads-reached-by view pads :a)
 
        ;; Current position of player
        (show-player view pads)
-
-       ;; Number islands
-       ;(show-numbers view pads)
 
        ])]
    ])

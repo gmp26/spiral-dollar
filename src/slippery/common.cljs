@@ -22,17 +22,17 @@
 (defonce svg-point (atom false))
 
 (defrecord Settings [title start target limit think-time players viewer])
-(def initial-settings (Settings. "Got it!" 0 23 4 2000 1 :number))
+(def initial-settings (Settings. "Slippery Snail" 0 30 4 2000 1 :number))
 
 (defrecord PlayState [player feedback state])
-(def initial-play-state (PlayState. :a "" 0))
+(def initial-play-state (PlayState. :a "" [3 10 21 30]))
 
 (defrecord Game [game]
   game/IGame
 
   (is-over? [this]
     (let [gm @(:game this)]
-      (if (= (:state (:play-state gm)) (:target (:settings gm)))
+      (if (= (:state (:play-state gm)) [])
         (:player (:play-state gm))
         false)))
 
@@ -63,6 +63,7 @@
       (game/commit-play this move)))
 
   (commit-play [this new-play]
+    ;; todo
     (swap! (:game this) assoc-in [:play-state :state] new-play)
     (when (not (game/is-over? this))
       (swap! (:game this) assoc-in [:play-state :player] (game/next-player this))
@@ -72,7 +73,7 @@
   (reset-game [this]
     (let [game-state (:game this)]
       (hist/empty-history!)
-      (swap! game-state assoc :play-state (PlayState. :a "" 0))))
+      (swap! game-state assoc :play-state initial-play-state)))
 
   (is-computer-turn?
     [this]
@@ -92,6 +93,7 @@
 
   (schedule-computer-turn
     [this]
+    ;; todo
     (let [move (- (game/optimal-outcome this) (:state (:play-state @(:game this))))]
       (swap! (:game this) assoc-in [:play-state :feedback] (str "Computer goes " move)))
     (util/delayed-call (:think-time (:settings @(:game this))) #(game/play-computer-turn this)))
@@ -107,21 +109,28 @@
         (set (map #(+ state %) (range 1 (inc (min (- target state) limit))))))))
 
   (heap-equivalent
-    [this]
-    (let [gm @(:game this)
-          settings (:settings gm)
-          target (:target settings)
-          limit (:limit settings)
-          state (:state (:play-state gm))]
-      (mod (- target state) (inc limit))))
+    "Returns a seq of equivalent nim heaps for a snail game-state"
+    ;; todo:
+    ([this]
+     (if (empty? state)
+       '(0)
+       (map first (partition 2 (conj (vec (gaps state)) nil))))
+     )
+
+    #_([limit state]
+     (if (empty? state)
+       '(0)
+       (map (comp #(mod % (inc limit)) first) (partition 2 (conj (vec (gaps state)) nil))))))
+
 
   (optimal-outcome [this]
     (let [gm @(:game this)
           state (:state (:play-state gm))
           sum (game/heap-equivalent this)]
       (if (zero? sum)
-        (inc state)
-        (+ sum state)))))
+        (prn "todo: make random move")
+        (prn "todo: make the best move")
+        ))))
 
 (defonce Slippery (->Game (atom {:settings initial-settings
                               :play-state initial-play-state})))

@@ -53,9 +53,6 @@
                                  {:on-click handler
                                   :on-touch-start handler
                                   } {}))
-        game (rum/react (:game common/Slippery))
-        target (:target (:settings game))
-        state (:state (:play-state game))
         ]
     [:g
      [:circle.pad (merge {:r 20
