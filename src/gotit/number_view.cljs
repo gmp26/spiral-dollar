@@ -6,7 +6,6 @@
               [generic.components :as comp]
               [generic.viewer :refer [IViewer]]
               [gotit.common :as common]
-              [cljsjs.jquery :as jq]
               [cljsjs.bootstrap :as bs]
               [events.svg :as esg]))
 
@@ -14,7 +13,7 @@
 ;; ui config
 ;;;
 (def view {:vw 620
-           :vh 400
+           :vh 280
            :pad-x 80
            :pad-y 80})
 
@@ -53,23 +52,21 @@
 (rum/defc number-in-circle < rum/static [amap value]
   (let [attrs (merge {:cx 0 :cy 0 :r 50 :fill "white" :text-fill "black" :stroke "black"} amap)]
     [:g
-     [:circle attrs]
+     [:circle (conj attrs {:key 1})]
      [:text {:x (- (:cx attrs) (if (< value 10) 17 33))
              :y (+ (:cy attrs) 20)
              :fill (:text-fill attrs)
              :font-size 60
+             :key 2
              }
       value]]))
 
 (defn move-by [event delta]
   (.stopPropagation event)
   (.preventDefault event)
-  (prn "delta " delta)
   (let [game @(:game common/Gotit)
         new-state (+ delta (:state (:play-state game)))]
-    (prn "new state " new-state)
     (when (<= new-state (:target (:settings game)))
-      (prn new-state)
       (game/player-move common/Gotit new-state))))
 
 (rum/defc viewer-macro < rum/reactive []
@@ -107,7 +104,7 @@
              ;;         :on-touch-move esg/handle-move-line
              ;;         :on-touch-end esg/handle-end-line
              }
-       [:g {:transform "scale(1, 1) translate(-60 -30)"}
+       [:g {:transform "scale(1, 1) translate(-60 30)"}
         [:text {:x (- (:x origin) 170)
                 :y (- (:y origin) 80)
                 :fill "white"
@@ -146,8 +143,7 @@
     "On your turn you can add up to "
     [:b (:limit (:settings (rum/react (:game common/Gotit))))]
     " to the total. "
-    " You win if you reach the target number before your opponent."
-]])
+    " You win if you reach the target number first."]])
 
 
 (defrecord Number-view []

@@ -11,7 +11,6 @@
 (def min-players 1)
 (def max-players 2)
 
-
 (defn check-target [t]
   (and (not (js.isNaN t)) (>= t min-target) (<= t max-target)))
 (defn check-limit [l]
@@ -23,7 +22,7 @@
 (defonce svg-point (atom false))
 
 (defrecord Settings [title start target limit think-time players viewer])
-(def initial-settings (Settings. "Got it island!" 0 23 4 2000 1 :island))
+(def initial-settings (Settings. "Got it!" 0 23 4 2000 1 :number))
 
 (defrecord PlayState [player feedback state])
 (def initial-play-state (PlayState. :a "" 0))
@@ -126,3 +125,10 @@
 
 (defonce Gotit (->Game (atom {:settings initial-settings
                               :play-state initial-play-state})))
+
+(defn switch-view
+  "switch game view"
+  [key]
+  (swap! (:game Gotit) assoc-in [:settings :viewer] key)
+  (swap! (:game Gotit) assoc-in [:settings :title]
+         (if (= key :number) "Got it!" "Got it Island")))

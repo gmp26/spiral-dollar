@@ -9,7 +9,7 @@
                [gotit.common :as common]
                [gotit.spiral-view :refer [Spiral-view]]
                [gotit.number-view :refer [Number-view]]
-              [cljsjs.jquery :as jq]
+               [cljsjs.jquery :as jq]
                [cljsjs.bootstrap :as bs]
                [events.svg :as esg]
                ))
@@ -20,6 +20,7 @@
 ;;;
 ;; ui button events
 ;;;
+
 (defn change-player-count
   "change to 1-player or 2-player mode"
   [count]
@@ -84,6 +85,24 @@
 (defn new-limit [event]
   (handle-int event common/min-limit common/max-limit (:game common/Gotit) [:settings :limit]))
 
+(defn switch-view [viewer]
+  (common/switch-view viewer)
+  (routing/save-settings))
+
+(defn hidden-settings [event]
+  (routing/save-settings))
+
+(defn open-settings
+  "add modal close detection"
+  [event]
+  (.on (js/$ "#settings") "hidden.bs.modal" hidden-settings))
+
+(defn close-settings
+  "remove eventhandler to avoid memory leak"
+  [event]
+  (routing/save-settings)
+  (.off (js/$ "#settings") "hidden.bs.modal"))
+
 (rum/defc settings-modal < rum/reactive []
   (let [active (fn [players player-count]
                  (if (= player-count players) "active" ""))
@@ -91,13 +110,15 @@
         stings (:settings game)]
     [:#settings.modal.fade {:tab-index "-1"
                             :role "dialog"
-                            :aria-labelledby "mySmallModalLabel"}
+                            :aria-labelledby "mySmallModalLabel"
+                            }
      [:.modal-dialog.modal-sm
       [:.modal-content
        [:.modal-header
         [:button.close {:type "button"
                         :data-dismiss "modal"
                         :aria-label "Close"
+                        :on-click close-settings
                         }
          [:span.fa.fa-times {:aria-hidden "true"} ]]
         [:h4.modal-title "Settings"]]
@@ -105,7 +126,20 @@
        [:form.form-horizontal {:style {:padding "20px"}}
         [:form-group
 
-         [:.row {:style {:padding "20px 0"}}
+         [:.row {:style {:padding "10px 0"}}
+
+          [:label.col-sm-4 {:for "p1"} "Choose game"]
+          [:.btn-group.col-sm-8
+           [:button.btn.btn-default.dropdown-toggle
+            {:type "button"
+             :data-toggle "dropdown"
+             :aria-haspopup "true"
+             :aria-expanded "false"}
+            (if (= :number (:viewer (:settings game))) "Classic Got it " "Got it Island ")
+            [:span.caret]]
+           [:ul.dropdown-menu
+            [:li [:a {:href "#" :on-click #(switch-view :number)} "Classic Got it"]]
+            [:li [:a {:href "#" :on-click #(switch-view :island)} "Got it Island"]]]]][:.row {:style {:padding "20px 0"}}
 
           [:label.col-sm-4 {:for "p1"} "Game mode"]
           [:.btn-group.col-sm-8
@@ -120,9 +154,10 @@
             [:li [:a {:href "#" :on-click one-player} "Play the computer"]]
             [:li [:a {:href "#" :on-click two-player} "Play an opponent"]]]]]
 
-         [:.row {:style {:padding "20px 0"}}
-          [:label.col-sm-4 {:for "p2"} "How many islands? "]
-          [:span.spinner.col-sm-8
+         [:.row {:style {:padding "10px 0"}}
+          [:label.col-sm-5 {:for "p2"} (if (= :number (:viewer (:settings game)))
+                                         "Target number" "How many islands?")]
+          [:span.spinner.col-sm-7
            [:button.up.no-select {:on-click handle-inc-target
                                   :on-touch-start handle-inc-target} "+"]
            [:button.down.no-select {:on-click handle-dec-target
@@ -132,9 +167,10 @@
                         :input-mode "numeric"
                         :on-change new-pad-count
                         :value (:target (:settings game))}]]]
-         [:.row {:style {:padding "20px 0"}}
-          [:label.col-sm-4 {:for "p2"} "How many bridges per turn? "]
-          [:span.spinner.col-sm-8
+         [:.row {:style {:padding "10px 0"}}
+          [:label.col-sm-5 {:for "p2"} (if (= :number (:viewer (:settings game)))
+                                         "Each turn, add no more than" "Each turn, bridge no more than")]
+          [:span.spinner.col-sm-7
            [:button.up.no-select {:on-click handle-inc-limit
                                   :on-touch-start handle-inc-limit} "+"]
            [:button.down.no-select {:on-click handle-dec-limit
@@ -143,11 +179,8 @@
                         :pattern "\\d*"
                         :input-mode "numeric"
                         :on-change new-limit
-                        :value (:limit (:settings game))}]]]]]]]]))
-
-(defn open-settings [event])
-
-(defn close-settings [event])
+                        :value (:limit (:settings game))}]
+           ]]]]]]]))
 
 (rum/defc tool-bar < rum/reactive []
   (let [active (fn [players player-count]
@@ -182,8 +215,7 @@
 (rum/defc status-bar < rum/reactive
   "render top status bar"
   [viewer]
-  (let [[over-class status] (game/get-status common/Gotit)
-]
+  (let [[over-class status] (game/get-status common/Gotit)]
     [:div
       [:button {:type "button"
                 :class "btn btn-danger"
@@ -191,13 +223,14 @@
                         :clear "none"
                         }
                 :on-click #(game/reset-game common/Gotit)
-                :on-touch-end #(game/reset-game common/Gotit)}
+                :on-touch-end #(game/reset-game common/Gotit)
+                :key 1}
        [:span {:class "fa fa-refresh"}]
        " Restart"]
      [:p {:class (str "status " over-class)
-          :style {:width "240px"
-                  :background-color (iview/get-fill viewer status)} :key "b4"} (iview/get-message viewer status)
-]]))
+          :style {:width "100%"
+                  :background-color (iview/get-fill viewer status)}
+          :key 2} (iview/get-message viewer status)]]))
 
 (rum/defc footer < rum/reactive []
   "render footer with rules and copyright"

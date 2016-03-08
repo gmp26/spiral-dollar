@@ -28,10 +28,10 @@
       (swap! (:game common/Gotit) assoc-in [:settings :target] target)
       (swap! (:game common/Gotit) assoc-in [:settings :limit] limit)
       (swap! (:game common/Gotit) assoc-in [:settings :players] players)
-      (swap! (:game common/Gotit) assoc-in [:settings :viewer] viewer)
+      (common/switch-view viewer)
       )))
 
-(defroute
+(defroute full-island
   "/island/:target/:limit/:players" {:as params}
   (dispatching (:target params)
                (:limit params)
@@ -60,7 +60,7 @@
                :island))
 
 
-(defroute
+(defroute full-number
   "/number/:target/:limit/:players" {:as params}
   (dispatching (:target params)
                (:limit params)
@@ -115,6 +115,25 @@
                (:limit (:settings @(:game common/Gotit)))
                (:players (:settings @(:game common/Gotit)))
                :number))
+
+(defn params->url
+  "convert parameters to a url"
+  [viewer target limit players]
+  (let [pmap {:target target :limit limit :players players}]
+    (if (= viewer :number)
+      (full-number pmap)
+      (full-island pmap)
+      ))
+  )
+
+(defn save-settings
+  "save settings in the url"
+  []
+  (let [settings (:settings @(:game common/Gotit))]
+    (.replaceState js/history nil
+                   (:title settings)
+                   (params->url (:viewer settings) (:target settings)
+                                (:limit settings) (:players settings)))))
 
 ;; history configuration.
 ;;
