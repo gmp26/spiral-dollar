@@ -35,7 +35,7 @@
     "returns a set of states that may follow given state")
 
   (heap-equivalent [this]
-    "The nim-sum of the game - nim single heap equivalent of a gotit state")
+    "The nim-sum of the game - nim single heap equivalent of a slippery state")
 
   (optimal-outcome [this]
     "If we are in an N state returns a winning move. If we are in a P state, returns a small move.")

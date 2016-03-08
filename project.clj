@@ -34,41 +34,28 @@
               :builds [{:id "dev"
                         :source-paths ["src"]
                         :figwheel true
-                        :compiler {:main       "gotit.main"
-                                   :asset-path "js/compiled/gotit"
-                                   :output-to  "resources/public/js/compiled/gotit.js"
-                                   :output-dir "resources/public/js/compiled/gotit"
+                        :compiler {:main       "slippery.main"
+                                   :asset-path "js/compiled/slippery"
+                                   :output-to  "resources/public/js/compiled/slippery.js"
+                                   :output-dir "resources/public/js/compiled/slippery"
                                    :source-map-timestamp true }}
 
                        {:id "devcards"
                         :source-paths ["src"]
                         :figwheel { :devcards true } ;; <- note this
-                        :compiler { :main       "gotit.devcards"
+                        :compiler { :main       "slippery.devcards"
                                    :asset-path "js/compiled/devcards_out"
                                    :output-to  "resources/public/js/compiled/devcards.js"
                                    :output-dir "resources/public/js/compiled/devcards_out"
                                    :source-map-timestamp true }}
                        {:id "min"
                         :source-paths ["src"]
-                        :compiler {:main       "gotit.main"
+                        :compiler {:main       "slippery.main"
                                    :externs ["resources/externs/svg.js"]
                                    :asset-path "js/compiled/out"
-                                   :output-to  "resources/public/js/compiled/gotit.js"
+                                   :output-to  "resources/public/js/compiled/slippery.js"
                                    :optimizations :advanced}}
                        ]
               }
 
   :figwheel { :css-dirs ["resources/public/css"] })
-
-
-(comment
-
-                       {:id "dev"
-                        :source-paths ["src"]
-                        :figwheel true
-                        :compiler {:main       "gotit.main"
-                                   :asset-path "js/compiled/gotit"
-                                   :output-to  "resources/public/js/compiled/gotit.js"
-                                   :output-dir "resources/public/js/compiled/gotit"
-                                   :source-map-timestamp true }}
-)

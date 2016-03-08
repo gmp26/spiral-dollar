@@ -1,11 +1,11 @@
-(ns ^:figwheel-always gotit.number-view
+(ns ^:figwheel-always slippery.number-view
     (:require [rum.core :as rum]
               [generic.game :as game]
               [generic.util :as util]
               [generic.history :as hist]
               [generic.components :as comp]
               [generic.viewer :refer [IViewer]]
-              [gotit.common :as common]
+              [slippery.common :as common]
               [cljsjs.bootstrap :as bs]
               [events.svg :as esg]))
 
@@ -64,13 +64,13 @@
 (defn move-by [event delta]
   (.stopPropagation event)
   (.preventDefault event)
-  (let [game @(:game common/Gotit)
+  (let [game @(:game common/Slippery)
         new-state (+ delta (:state (:play-state game)))]
     (when (<= new-state (:target (:settings game)))
-      (game/player-move common/Gotit new-state))))
+      (game/player-move common/Slippery new-state))))
 
 (rum/defc viewer-macro < rum/reactive []
-  (let [game (rum/react (:game common/Gotit))
+  (let [game (rum/react (:game common/Slippery))
         play-state (:play-state game)
         state (:state play-state)
         settings (:settings game)
@@ -87,7 +87,7 @@
        (for [delta (range 1 (inc limit))]
          [:.btn.btn-default.btn-lg
           {:type "button"
-           :class (if (game/is-computer-turn? common/Gotit) "disabled" "")
+           :class (if (game/is-computer-turn? common/Slippery) "disabled" "")
            :on-click #(move-by % delta)
            :on-touch-start #(move-by % delta)} (str "+" delta)])]]
 
@@ -141,7 +141,7 @@
     {:style {:color "white"
              :max-width "800px"}}
     "On your turn you can add up to "
-    [:b (:limit (:settings (rum/react (:game common/Gotit))))]
+    [:b (:limit (:settings (rum/react (:game common/Slippery))))]
     " to the total. "
     " You win if you reach the target number first."]])
 

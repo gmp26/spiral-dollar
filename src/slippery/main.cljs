@@ -1,14 +1,14 @@
-(ns  ^:figwheel-always gotit.main
+(ns  ^:figwheel-always slippery.main
      (:require [rum.core :as rum]
                [generic.game :as game]
                [generic.util :as util]
                [generic.history :as hist]
                [generic.components :as comp]
                [generic.viewer :as iview :refer [IViewer]]
-               [gotit.routing :as routing]
-               [gotit.common :as common]
-               [gotit.spiral-view :refer [Spiral-view]]
-               [gotit.number-view :refer [Number-view]]
+               [slippery.routing :as routing]
+               [slippery.common :as common]
+               [slippery.spiral-view :refer [Spiral-view]]
+               [slippery.number-view :refer [Number-view]]
                [cljsjs.jquery :as jq]
                [cljsjs.bootstrap :as bs]
                [events.svg :as esg]
@@ -24,8 +24,8 @@
 (defn change-player-count
   "change to 1-player or 2-player mode"
   [count]
-  (swap! (:game common/Gotit) assoc-in [:settings :players] count)
-  (game/reset-game common/Gotit))
+  (swap! (:game common/Slippery) assoc-in [:settings :players] count)
+  (game/reset-game common/Slippery))
 
 (defn one-player [event]
   (.preventDefault event)
@@ -39,13 +39,13 @@
   "undo button handler"
   [event]
   (.preventDefault event)
-  (swap! (:game common/Gotit) #(assoc % :play-state (hist/undo! (:play-state %)))))
+  (swap! (:game common/Slippery) #(assoc % :play-state (hist/undo! (:play-state %)))))
 
 (defn redo
   "redo button handler"
   [event]
   (.preventDefault event)
-  (swap! (:game common/Gotit) #(assoc % :play-state (hist/redo! (:play-state %)))))
+  (swap! (:game common/Slippery) #(assoc % :play-state (hist/redo! (:play-state %)))))
 
 (defn validated-int [value min-val max-val]
   (cond
@@ -61,16 +61,16 @@
   (.stopPropagation event))
 
 (defn handle-inc-target [event]
-  (handle-spinner event (:game common/Gotit) [:settings :target] #(validated-int (inc %) common/min-target common/max-target)))
+  (handle-spinner event (:game common/Slippery) [:settings :target] #(validated-int (inc %) common/min-target common/max-target)))
 
 (defn handle-dec-target [event]
-  (handle-spinner event (:game common/Gotit) [:settings :target] #(validated-int (dec %) common/min-target common/max-target)))
+  (handle-spinner event (:game common/Slippery) [:settings :target] #(validated-int (dec %) common/min-target common/max-target)))
 
 (defn handle-inc-limit [event]
-  (handle-spinner event (:game common/Gotit) [:settings :limit] #(validated-int (inc %) common/min-limit common/max-limit)))
+  (handle-spinner event (:game common/Slippery) [:settings :limit] #(validated-int (inc %) common/min-limit common/max-limit)))
 
 (defn handle-dec-limit [event]
-  (handle-spinner event (:game common/Gotit) [:settings :limit] #(validated-int (dec %) common/min-limit common/max-limit)))
+  (handle-spinner event (:game common/Slippery) [:settings :limit] #(validated-int (dec %) common/min-limit common/max-limit)))
 
 (defn handle-int [event min-val max-val ref cursor]
   (.stopPropagation event)
@@ -80,10 +80,10 @@
     ))
 
 (defn new-pad-count [event]
-  (handle-int event common/min-target common/max-target (:game common/Gotit) [:settings :target]))
+  (handle-int event common/min-target common/max-target (:game common/Slippery) [:settings :target]))
 
 (defn new-limit [event]
-  (handle-int event common/min-limit common/max-limit (:game common/Gotit) [:settings :limit]))
+  (handle-int event common/min-limit common/max-limit (:game common/Slippery) [:settings :limit]))
 
 (defn switch-view [viewer]
   (common/switch-view viewer)
@@ -106,7 +106,7 @@
 (rum/defc settings-modal < rum/reactive []
   (let [active (fn [players player-count]
                  (if (= player-count players) "active" ""))
-        game (rum/react (:game common/Gotit))
+        game (rum/react (:game common/Slippery))
         stings (:settings game)]
     [:#settings.modal.fade {:tab-index "-1"
                             :role "dialog"
@@ -185,7 +185,7 @@
 (rum/defc tool-bar < rum/reactive []
   (let [active (fn [players player-count]
                  (if (= player-count players) "active" ""))
-        game (rum/react (:game common/Gotit))
+        game (rum/react (:game common/Slippery))
         stings (:settings game)]
     [:.btn-group.toolbar.pull-right
      [:button.btn.btn-default.bs-example-modal-sm
@@ -215,15 +215,15 @@
 (rum/defc status-bar < rum/reactive
   "render top status bar"
   [viewer]
-  (let [[over-class status] (game/get-status common/Gotit)]
+  (let [[over-class status] (game/get-status common/Slippery)]
     [:div
       [:button {:type "button"
                 :class "btn btn-danger"
                 :style {:display "inline"
                         :clear "none"
                         }
-                :on-click #(game/reset-game common/Gotit)
-                :on-touch-end #(game/reset-game common/Gotit)
+                :on-click #(game/reset-game common/Slippery)
+                :on-touch-end #(game/reset-game common/Slippery)
                 :key 1}
        [:span {:class "fa fa-refresh"}]
        " Restart"]
@@ -240,11 +240,11 @@
     "The last player able to move wins"
     ]
    [:p
-    "On your turn you may move the counter up to " (:limit (:settings (rum/react (:game common/Gotit)))) " squares"]
+    "On your turn you may move the counter up to " (:limit (:settings (rum/react (:game common/Slippery)))) " squares"]
    ])
 
 (rum/defc show-game-state < rum/reactive []
-  (let [game (rum/react (:game common/Gotit))]
+  (let [game (rum/react (:game common/Slippery))]
     [:.debug
      [:p (str (into {} (:settings game)))]
      [:p (str (into {} (:play-state game)))]
@@ -252,7 +252,7 @@
 
 
 (rum/defc feedback < rum/reactive []
-  (let [message (:feedback (:play-state (rum/react (:game common/Gotit))))]
+  (let [message (:feedback (:play-state (rum/react (:game common/Slippery))))]
     [:div {:style {:padding "0px 20px"
                    :position "relative"
                    :top "-50px"}}
@@ -265,7 +265,7 @@
 (rum/defc game-container  < rum/reactive
   "the game container mounted onto the html game element"
   []
-  (let [game (rum/react (:game common/Gotit))
+  (let [game (rum/react (:game common/Slippery))
         viewer (if (= :number (:viewer (:settings game))) (Number-view.) (Spiral-view.))
         play (:play-state game)]
     [:section#game-container.container {:style {:max-width "600px"}}
@@ -287,7 +287,7 @@
 ;; game ui
 ;;;
 (rum/defc main < rum/reactive []
-  [:h1 (:title (:settings (rum/react (:game common/Gotit))))]
+  [:h1 (:title (:settings (rum/react (:game common/Slippery))))]
   )
 
 (rum/mount (game-container) (util/el "main-app"))

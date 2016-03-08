@@ -1,2 +1,2 @@
-# gotit-no-frills
-gotit without any blockly nonsense
+# spiral-dollar
+A combination of silver dollar and slippery snail games

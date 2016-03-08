@@ -1,11 +1,11 @@
-(ns ^:figwheel-always gotit.spiral-view
+(ns ^:figwheel-always slippery.spiral-view
     (:require [rum.core :as rum]
               [generic.game :as game]
               [generic.util :as util]
               [generic.history :as hist]
               [generic.components :as comp]
               [generic.viewer :refer [IViewer]]
-              [gotit.common :as common]
+              [slippery.common :as common]
               [cljsjs.jquery :as jq]
               [cljsjs.bootstrap :as bs]
               [events.svg :as esg]))
@@ -51,7 +51,7 @@
 ;;;;;;;; Game art ;;;;;;;;
 
 (defn pad-click [event pad-index]
-  (game/player-move common/Gotit pad-index)
+  (game/player-move common/Slippery pad-index)
   )
 
 (defn reached?
@@ -77,7 +77,7 @@
                   pads))])
 
 (defn show-player [view pads]
-  (let [play-state (:play-state @(:game common/Gotit))
+  (let [play-state (:play-state @(:game common/Slippery))
         p (esg/xy->viewport view (get pads (:state play-state)))]
     [:text.numb {:x (- (first p) 15)
             :y (+  (second p) 10)
@@ -90,7 +90,7 @@
     ))
 
 (defn show-target [view pads]
-  (let [settings (:settings @(:game common/Gotit))
+  (let [settings (:settings @(:game common/Slippery))
         target (:target settings)
         p (esg/xy->viewport view (pads target))]
     [:text.numb {:x (- (first p) 11.5)
@@ -104,7 +104,7 @@
     ))
 
 (defn show-numbers [view pads]
-  (let [game @(:game common/Gotit)
+  (let [game @(:game common/Slippery)
         target (:target (:settings game))
         state (:state (:play-state game))]
     (map
@@ -137,7 +137,7 @@
 ;;         :on-touch-end esg/handle-end-line
          }
    [:g {:transform "translate(-20, -20)"}
-    (let [game (rum/react (:game common/Gotit))
+    (let [game (rum/react (:game common/Slippery))
           play-state (:play-state game)
           state (:state play-state)
           settings (:settings game)
@@ -206,7 +206,7 @@
   [:div {:style {:padding "20px"}}
    [:.alert.alert-info
     "On your turn you can build up to "
-    [:b (:limit (:settings (rum/react (:game common/Gotit)))) " bridges"]
+    [:b (:limit (:settings (rum/react (:game common/Slippery)))) " bridges"]
     " over the shallows by "
     [:b " tapping the yellow island you want to reach."]
     " Be the first to reach the treasure marked with a cross. "]])

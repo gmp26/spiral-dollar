@@ -1,4 +1,4 @@
-(ns ^:figwheel-always gotit.common
+(ns ^:figwheel-always slippery.common
     (:require [generic.game :as game]
               [generic.util :as util]
               [generic.history :as hist]))
@@ -123,12 +123,12 @@
         (inc state)
         (+ sum state)))))
 
-(defonce Gotit (->Game (atom {:settings initial-settings
+(defonce Slippery (->Game (atom {:settings initial-settings
                               :play-state initial-play-state})))
 
 (defn switch-view
   "switch game view"
   [key]
-  (swap! (:game Gotit) assoc-in [:settings :viewer] key)
-  (swap! (:game Gotit) assoc-in [:settings :title]
-         (if (= key :number) "Got it!" "Got it Island")))
+  (swap! (:game Slippery) assoc-in [:settings :viewer] key)
+  (swap! (:game Slippery) assoc-in [:settings :title]
+         (if (= key :number) "Slippery Snail" "Silver Dollar")))

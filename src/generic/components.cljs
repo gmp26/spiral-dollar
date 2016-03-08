@@ -1,6 +1,6 @@
 (ns ^:figwheel-always generic.components
     (:require [rum.core :as rum]
-              [gotit.common :as common]
+              [slippery.common :as common]
               [events.svg :as esg]
 ))
 
@@ -44,7 +44,7 @@
          (apply str (map #(str "L" (% 0) " " (% 1) " ")
                          (map #(esg/xy->viewport view %) (rest points)))))))
 
-;; Actually, now a gotit specific pad.  Mmmm
+;; Actually, now a slippery specific pad.  Mmmm
 (rum/defc pad < rum/reactive [view [x y] & [attributes handler]]
   "create a clickable game pad"
   (let [[left top] (esg/xy->viewport view [x y])
@@ -53,7 +53,7 @@
                                  {:on-click handler
                                   :on-touch-start handler
                                   } {}))
-        game (rum/react (:game common/Gotit))
+        game (rum/react (:game common/Slippery))
         target (:target (:settings game))
         state (:state (:play-state game))
         ]
