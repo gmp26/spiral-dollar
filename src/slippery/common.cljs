@@ -108,20 +108,17 @@
         (set (mapcat #(game/followers this %) state))
         (set (map #(+ state %) (range 1 (inc (min (- target state) limit))))))))
 
-  #_(heap-equivalent
-    "Returns a seq of equivalent nim heaps for a snail game-state"
-
-    ([state]
-     (if (empty? state)
-       '(0)
-       (map first (partition 2 (conj (vec (gaps state)) nil))))
-     )
-
-    ([limit state]
-     (if (empty? state)
-       '(0)
-       (map (comp #(mod % (inc limit)) first) (partition 2 (conj (vec (gaps state)) nil))))))
-
+  (heap-equivalent
+    [this]
+    (prn "todo: heap-equivalent")
+    (let [state (:state (:play-state @(:game this)))
+          limit (:limit (:settings @(:game this)))]
+      (if (empty? state)
+        '(0)
+        (let [paired-gaps (partition 2 (conj (vec (gaps state)) nil))]
+          (if (or (nil? limit) (zero? limit))
+            (map first paired-gaps)
+            (map (comp #(mod % (inc limit)) first) paired-gaps))))))
 
   (optimal-outcome [this]
     (let [gm @(:game this)

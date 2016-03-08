@@ -121,7 +121,7 @@
                            :fill ((if (= (:player play-state) :a) :b :a) colours)
                            :stroke "none"
                            :text-fill "white"
-                           } state)
+                           } 10)
         (number-in-circle {:cx (:x origin)
                            :cy (:y origin)
                            :r 40
