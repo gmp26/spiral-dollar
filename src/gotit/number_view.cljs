@@ -87,10 +87,12 @@
                                            :font-size "18px"
                                            :vertical-align "middle"} :for "grp"} "Add to Total"]
       [:#grp.btn-group.col-sm-8 {:role "group" :aria-label "add to total buttons"}
-       (for [delta (range 1 limit)]
-         [:.btn.btn-default.btn-lg {:type "button"
-                             :on-click #(move-by % delta)
-                             :on-touch-start #(move-by % delta)} (str "+" delta)])]]
+       (for [delta (range 1 (inc limit))]
+         [:.btn.btn-default.btn-lg
+          {:type "button"
+           :class (if (game/is-computer-turn? common/Gotit) "disabled" "")
+           :on-click #(move-by % delta)
+           :on-touch-start #(move-by % delta)} (str "+" delta)])]]
 
      [:.row
       [:svg {:view-box (str "0 0 " (:vw view) " " (:vh view))
@@ -142,7 +144,7 @@
     {:style {:color "white"
              :max-width "800px"}}
     "On your turn you can add up to "
-    [:b (:limit (:settings (rum/react (:game common/Gotit)))) " bridges"]
+    [:b (:limit (:settings (rum/react (:game common/Gotit))))]
     " to the total. "
     " You win if you reach the target number before your opponent."
 ]])

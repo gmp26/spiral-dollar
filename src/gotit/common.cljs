@@ -11,6 +11,7 @@
 (def min-players 1)
 (def max-players 2)
 
+
 (defn check-target [t]
   (and (not (js.isNaN t)) (>= t min-target) (<= t max-target)))
 (defn check-limit [l]
