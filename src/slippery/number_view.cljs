@@ -62,71 +62,71 @@
              } value]
 ]))
 
+(def s30 0.5)
+(def rt3 (Math.sqrt 3))
+(def rt3o2 (/ rt3 2))
 
-(rum/defc dropper < rum/static [amap value]
+(rum/defc dropper < rum/static [{:keys [:r :cx cy] :as amap} value]
   [:g
    (number-in-circle amap value)
-   [:polygon (merge amap {:points (str (- (:cx amap) (* 0.8 (:r amap))) ", " (+ (:cy amap) (:r amap) -16) " "
-                                       (+ (:cx amap) (* 0.8 (:r amap))) ", " (+ (:cy amap) (:r amap) -16) " "
-                                       (:cx amap) "," (+ (:cy amap) (* 1.1 (:r amap) (Math.sqrt 3) )))})]]
+   [:polygon (merge amap {:points (str (- cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
+                                       (+ cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
+                                       cx "," (+ cy (* 2 r)))})]]
   )
 
+
+(defn handle-start-drag [event]
+  (esg/handle-start-drag event))
 
 (defn move-by [event delta]
   (.stopPropagation event)
   (.preventDefault event)
   (let [game @(:game common/Slippery)
         new-state (+ delta (:state (:play-state game)))]
-    (when (<= new-state (:target (:settings game)))
+    (when (<= new-state (:game-size (:settings game)))
       (game/player-move common/Slippery new-state))))
+
+
 
 (rum/defc viewer-macro < rum/reactive []
   (let [game (rum/react (:game common/Slippery))
         play-state (:play-state game)
         state (:state play-state)
         settings (:settings game)
-        target (:target settings)
+        game-size (:game-size settings)
         limit (:limit settings)
-        origin {:x (/ (:vw view) 2) :y (/ (:vh view) 2)}]
+        origin {:x (/ (:vw view) 2) :y (/ (:vh view) 2)}
+        r 40]
     [:.col-sm-12
      [:div {:style {:margin-bottom "50px"}}]
-     [:.row
-      [:label.col-sm-4.text-right {:style {:color "white"
-                                           :font-size "18px"
-                                           :vertical-align "middle"} :for "grp"} "Add to Total"]
-      [:#grp.btn-group.col-sm-8 {:role "group" :aria-label "add to total buttons"}
-       (for [delta (range 1 (inc limit))]
-         [:.btn.btn-default.btn-lg
-          {:type "button"
-           :class (if (game/is-computer-turn? common/Slippery) "disabled" "")
-           :on-click #(move-by % delta)
-           :on-touch-start #(move-by % delta)} (str "+" delta)])]]
+
 
      [:.row
       [:svg {:view-box (str "0 0 " (:vw view) " " (:vh view))
              :height "100%"
              :width "100%"
              :id "svg-container"
-             ;;         :on-mouse-down esg/handle-start-line
-             ;;         :on-mouse-move esg/handle-move-line
-             ;;         :on-mouse-out esg/handle-out
-             ;;         :on-mouse-up esg/handle-end-line
-             ;;         :on-touch-start esg/handle-start-line
-             ;;         :on-touch-move esg/handle-move-line
-             ;;         :on-touch-end esg/handle-end-line
              }
-       [:g
 
-        (dropper {:cx (:x origin)
-                  :cy (- (:y origin) 100)
-                  :r 40
-                  :fill ((if (= (:player play-state) :a) :b :a) colours)
-                  :stroke "none"
-                  :text-fill "white"
-                  } 10)
+       (map-indexed
+        #(dropper {:cx (+ (:x origin) (* r (+ 1 (* 2 %1) (- (count state)))))
+                   :cy (- (:y origin) 100)
+                   :r r
+                   :fill ((if (= (:player play-state) :a) :b :a) colours)
+                   :stroke "none"
+                   :text-fill "white"
+                   :on-mouse-down esg/handle-start-drag
+                   :on-mouse-move esg/handle-move
+                   :on-mouse-out esg/handle-out
+                   :on-mouse-up esg/handle-end-drag
+                   :on-touch-start esg/handle-start-drag
+                   :on-touch-move esg/handle-move
+                   :on-touch-end esg/handle-end-drag
+                   } %2)
+        state)
 
 
-        ]
+
 
        ]]]))
 
@@ -136,10 +136,7 @@
    [:h3.center-block
     {:style {:color "white"
              :max-width "800px"}}
-    "On your turn you can add up to "
-    [:b (:limit (:settings (rum/react (:game common/Slippery))))]
-    " to the total. "
-    " You win if you reach the target number first."]])
+    "On your turn you can pull down one of the balloons. However the balloons must stay in strictly increasing order of height. The player who makes the last possible move wins."]])
 
 
 (defrecord Number-view []

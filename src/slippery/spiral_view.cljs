@@ -90,10 +90,10 @@
             }  "\uf21d"] ;street-view
     ))
 
-(defn show-target [view pads]
+(defn show-game-size [view pads]
   (let [settings (:settings @(:game common/Slippery))
-        target (:target settings)
-        p (esg/xy->viewport view (pads target))]
+        game-size (:game-size settings)
+        p (esg/xy->viewport view (pads game-size))]
     [:text.numb {:x (- (first p) 11.5)
             :y (+  (second p) 3)
             :font-family "FontAwesome"
@@ -106,7 +106,7 @@
 
 #_(defn show-numbers [view pads]
   (let [game @(:game common/Slippery)
-        target (:target (:settings game))
+        game-size (:game-size (:settings game))
         state (:state (:play-state game))]
     (map
      #(do
@@ -122,7 +122,7 @@
                   :fill "black"
                   } dex]))
      (keep-indexed (fn [index point]
-                     (when (or (<= index state) (= index target)) [index point])) pads)))  )
+                     (when (or (<= index state) (= index game-size)) [index point])) pads)))  )
 
 (rum/defc viewer-macro < rum/reactive []
   [:svg {:view-box (str "0 0 " (:vw view) " " (:vh view))
@@ -142,16 +142,16 @@
           play-state (:play-state game)
           state (:state play-state)
           settings (:settings game)
-          target (:target settings)
+          game-size (:game-size settings)
           limit (:limit settings)
-          pad-count (inc target)
+          pad-count (inc game-size)
           pads (vec (comp/pad-spiral pad-count))]
 
       [:g
        ;; render sand banks
        (comp/render-pad-path view pad-count
                              0
-                             target
+                             game-size
                              {:stroke "#3366bb"
                               :stroke-width 40
                               :stroke-dasharray "15 20  5 10"
@@ -161,7 +161,7 @@
        ;; todo:
        #_(comp/render-pad-path view pad-count
                              0
-                             (min target (+ (:limit settings)
+                             (min game-size (+ (:limit settings)
                                      state))
                              {:stroke "#0088ff"
                               :stroke-width 30
@@ -188,7 +188,7 @@
 
        ;; Target Cross
        ;; todo:
-       (show-target view pads)
+       (show-game-size view pads)
 
        ;; Current position of player
        (show-player view pads)

@@ -60,11 +60,11 @@
   (.preventDefault event)
   (.stopPropagation event))
 
-(defn handle-inc-target [event]
-  (handle-spinner event (:game common/Slippery) [:settings :target] #(validated-int (inc %) common/min-target common/max-target)))
+(defn handle-inc-game-size [event]
+  (handle-spinner event (:game common/Slippery) [:settings :game-size] #(validated-int (inc %) common/min-game-size common/max-game-size)))
 
-(defn handle-dec-target [event]
-  (handle-spinner event (:game common/Slippery) [:settings :target] #(validated-int (dec %) common/min-target common/max-target)))
+(defn handle-dec-game-size [event]
+  (handle-spinner event (:game common/Slippery) [:settings :game-size] #(validated-int (dec %) common/min-game-size common/max-game-size)))
 
 (defn handle-inc-limit [event]
   (handle-spinner event (:game common/Slippery) [:settings :limit] #(validated-int (inc %) common/min-limit common/max-limit)))
@@ -75,12 +75,12 @@
 (defn handle-int [event min-val max-val ref cursor]
   (.stopPropagation event)
   (.preventDefault event)
-  (let [value (.parseInt js/window (.-value (.-target event)))]
+  (let [value (.parseInt js/window (.-value (.-game-size event)))]
     (swap! ref assoc-in cursor (validated-int value min-val max-val))
     ))
 
 (defn new-pad-count [event]
-  (handle-int event common/min-target common/max-target (:game common/Slippery) [:settings :target]))
+  (handle-int event common/min-game-size common/max-game-size (:game common/Slippery) [:settings :game-size]))
 
 (defn new-limit [event]
   (handle-int event common/min-limit common/max-limit (:game common/Slippery) [:settings :limit]))
@@ -135,11 +135,11 @@
              :data-toggle "dropdown"
              :aria-haspopup "true"
              :aria-expanded "false"}
-            (if (= :number (:viewer (:settings game))) "Classic Got it " "Got it Island ")
+            (if (= :number (:viewer (:settings game))) "Silver Dollar " "Slippery Snail ")
             [:span.caret]]
            [:ul.dropdown-menu
-            [:li [:a {:href "#" :on-click #(switch-view :number)} "Classic Got it"]]
-            [:li [:a {:href "#" :on-click #(switch-view :island)} "Got it Island"]]]]][:.row {:style {:padding "20px 0"}}
+            [:li [:a {:href "#" :on-click #(switch-view :number)} "Silver Dollar"]]
+            [:li [:a {:href "#" :on-click #(switch-view :island)} "Slippery Snail"]]]]][:.row {:style {:padding "20px 0"}}
 
           [:label.col-sm-4 {:for "p1"} "Game mode"]
           [:.btn-group.col-sm-8
@@ -155,18 +155,17 @@
             [:li [:a {:href "#" :on-click two-player} "Play an opponent"]]]]]
 
          [:.row {:style {:padding "10px 0"}}
-          [:label.col-sm-5 {:for "p2"} (if (= :number (:viewer (:settings game)))
-                                         "Target number" "How many islands?")]
+          [:label.col-sm-5 {:for "p2"} "Game size"]
           [:span.spinner.col-sm-7
-           [:button.up.no-select {:on-click handle-inc-target
-                                  :on-touch-start handle-inc-target} "+"]
-           [:button.down.no-select {:on-click handle-dec-target
-                                    :on-touch-start handle-dec-target} "-"]
+           [:button.up.no-select {:on-click handle-inc-game-size
+                                  :on-touch-start handle-inc-game-size} "+"]
+           [:button.down.no-select {:on-click handle-dec-game-size
+                                    :on-touch-start handle-dec-game-size} "-"]
            [:input.num {:type "number"
                         :pattern "\\d*"
                         :input-mode "numeric"
                         :on-change new-pad-count
-                        :value (:target (:settings game))}]]]
+                        :value (:game-size (:settings game))}]]]
          [:.row {:style {:padding "10px 0"}}
           [:label.col-sm-5 {:for "p2"} (if (= :number (:viewer (:settings game)))
                                          "Each turn, add no more than" "Each turn, bridge no more than")]
@@ -279,8 +278,8 @@
        ;(show-game-state)
        ]
       (iview/game-viewer viewer play)
-      (feedback)]
-]))
+      (feedback)
+      (show-game-state)]]))
 
 
 ;;;

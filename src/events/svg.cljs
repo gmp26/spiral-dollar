@@ -60,19 +60,20 @@
   (.preventDefault event)
   )
 
-(defn handle-start-line
+(defn handle-start-drag
   "start dragging a line"
   [event]
   (.preventDefault event)
+  (prn (eventXY event))
   )
 
-(defn handle-move-line
+(defn handle-move
   "continue dragging a line"
   [event]
   (.preventDefault event)
   )
 
-(defn handle-end-line
+(defn handle-end-drag
   "handle end of drag. Convert to a tap if not moved"
   [event]
   (.preventDefault event)

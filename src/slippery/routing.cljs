@@ -18,113 +18,112 @@
 
 
 (defn dispatching [t l p v]
-  (let [target (js.parseInt t)
+  (let [game-size (js.parseInt t)
         limit (js.parseInt l)
         players (js.parseInt p)
         viewer v]
 
     (prn "viewer " viewer)
-    (when (and (common/check-target t) (common/check-limit l) (common/check-players p))
-      (swap! (:game common/Slippery) assoc-in [:settings :target] target)
+    (when (and (common/check-game-size t) (common/check-limit l) (common/check-players p))
+      (swap! (:game common/Slippery) assoc-in [:settings :game-size] game-size)
       (swap! (:game common/Slippery) assoc-in [:settings :limit] limit)
       (swap! (:game common/Slippery) assoc-in [:settings :players] players)
       (common/switch-view viewer)
       )))
 
 (defroute full-island
-  "/island/:target/:limit/:players" {:as params}
-  (dispatching (:target params)
+  "/island/:game-size/:limit/:players" {:as params}
+  (dispatching (:game-size params)
                (:limit params)
                (:players params)
                :island))
 
 (defroute
-  "/island/:target/:limit" {:as params}
-  (dispatching (:target params)
+  "/island/:game-size/:limit" {:as params}
+  (dispatching (:game-size params)
                (:limit params)
                (:players (:settings @(:game common/Slippery)))
                :island))
 
 (defroute
-  "/island/:target" {:as params}
-  (dispatching (:target params)
+  "/island/:game-size" {:as params}
+  (dispatching (:game-size params)
                (:limit (:settings @(:game common/Slippery)))
                (:players (:settings @(:game common/Slippery)))
                :island))
 
 (defroute
   "/island" {:as params}
-  (dispatching (:target (:settings @(:game common/Slippery)))
+  (dispatching (:game-size (:settings @(:game common/Slippery)))
                (:limit (:settings @(:game common/Slippery)))
                (:players (:settings @(:game common/Slippery)))
                :island))
 
 
 (defroute full-number
-  "/number/:target/:limit/:players" {:as params}
-  (dispatching (:target params)
+  "/number/:game-size/:limit/:players" {:as params}
+  (dispatching (:game-size params)
                (:limit params)
                (:players params)
                :number))
 
 (defroute
-  "/number/:target/:limit" {:as params}
-  (dispatching (:target params)
+  "/number/:game-size/:limit" {:as params}
+  (dispatching (:game-size params)
                (:limit params)
                (:players (:settings @(:game common/Slippery)))
                :number))
 
 (defroute
-  "/number/:target" {:as params}
-  (dispatching (:target params)
+  "/number/:game-size" {:as params}
+  (dispatching (:game-size params)
                (:limit (:settings @(:game common/Slippery)))
                (:players (:settings @(:game common/Slippery)))
                :number))
 
 (defroute
   "/number" {:as params}
-  (dispatching (:target params)
+  (dispatching (:game-size params)
                (:limit (:settings @(:game common/Slippery)))
                (:players (:settings @(:game common/Slippery)))
                :number))
 
 (defroute
-  "/:target/:limit/:players" {:as params}
-  (dispatching (:target params)
+  "/:game-size/:limit/:players" {:as params}
+  (dispatching (:game-size params)
                (:limit params)
                (:players params)
                :number))
 
 (defroute
-  "/:target/:limit" {:as params}
-  (dispatching (:target params)
+  "/:game-size/:limit" {:as params}
+  (dispatching (:game-size params)
                (:limit params)
                (:players (:settings @(:game common/Slippery)))
                :number))
 
 (defroute
-  "/:target" {:as params}
-  (dispatching (:target params)
+  "/:game-size" {:as params}
+  (dispatching (:game-size params)
                (:limit (:settings @(:game common/Slippery)))
                (:players (:settings @(:game common/Slippery)))
                :number))
 
 (defroute
   "" {:as params}
-  (dispatching (:target params)
+  (dispatching (:game-size params)
                (:limit (:settings @(:game common/Slippery)))
                (:players (:settings @(:game common/Slippery)))
                :number))
 
 (defn params->url
   "convert parameters to a url"
-  [viewer target limit players]
-  (let [pmap {:target target :limit limit :players players}]
+  [viewer game-size limit players]
+  (let [pmap {:game-size game-size :limit limit :players players}]
     (if (= viewer :number)
       (full-number pmap)
       (full-island pmap)
-      ))
-  )
+      )))
 
 (defn save-settings
   "save settings in the url"
@@ -132,7 +131,7 @@
   (let [settings (:settings @(:game common/Slippery))]
     (.replaceState js/history nil
                    (:title settings)
-                   (params->url (:viewer settings) (:target settings)
+                   (params->url (:viewer settings) (:game-size settings)
                                 (:limit settings) (:players settings)))))
 
 ;; history configuration.

@@ -4,28 +4,36 @@
               [generic.history :as hist]))
 
 ;; range validation
-(def min-target 10)
-(def max-target 40)
+(def min-game-size 10)
+(def max-game-size 40)
 (def min-limit 1)
-(def max-limit 6)
+(def max-limit max-game-size)
 (def min-players 1)
 (def max-players 2)
 
-(defn check-target [t]
-  (and (not (js.isNaN t)) (>= t min-target) (<= t max-target)))
+(defn check-game-size [t]
+  (and (not (js.isNaN t)) (>= t min-game-size) (<= t max-game-size)))
 (defn check-limit [l]
   (and (not (js.isNaN l))(>= l min-limit) (<= l max-limit)))
 (defn check-players [p]
   (and (not (js.isNaN p))(>= p min-players) (<= p max-players)))
 
-;; will be created to calculate svg screen transform
-(defonce svg-point (atom false))
+;; drag state
+(defonce drag-state (atom {:svg-point nil
+                           :drag-start nil}))
 
-(defrecord Settings [title start target limit think-time players viewer])
-(def initial-settings (Settings. "Slippery Snail" 0 30 4 2000 1 :number))
+(defrecord Settings [title game-size count limit think-time players viewer])
+(def initial-settings (Settings. "Silver Dollar" 30 6 4 2000 1 :number))
+
+(defn random-state [{:keys [:game-size :count]}]
+  (take count (apply sorted-set (map #(inc (rand-int game-size)) (range count)))))
+
+#_(defn random-state [{:keys [:game-size]} coins]
+  (take coins (reduce conj (sorted-set) (repeat (inc (rand-int game-size))))))
 
 (defrecord PlayState [player feedback state])
-(def initial-play-state (PlayState. :a "" [3 10 21 30]))
+(def initial-play-state (PlayState. :a "" (random-state initial-settings 5)))
+
 
 
 (defrecord Game [game]
@@ -103,11 +111,11 @@
     [this state]
     (let [gm @(:game this)
           settings (:settings gm)
-          target (:target settings)
+          game-size (:game-size settings)
           limit (:limit settings)]
       (if (set? state)
         (set (mapcat #(game/followers this %) state))
-        (set (map #(+ state %) (range 1 (inc (min (- target state) limit))))))))
+        (set (map #(+ state %) (range 1 (inc (min (- game-size state) limit))))))))
 
   (heap-equivalent
     [this]
@@ -140,4 +148,4 @@
   [key]
   (swap! (:game Slippery) assoc-in [:settings :viewer] key)
   (swap! (:game Slippery) assoc-in [:settings :title]
-         (if (= key :number) "Slippery Snail" "Silver Dollar")))
+         (if (= key :number) "Silver Dollar" "Slippery Snail")))
