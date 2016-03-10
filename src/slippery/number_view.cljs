@@ -51,7 +51,7 @@
 
 
 (rum/defc number-in-circle < rum/static [amap value]
-  (let [attrs (merge {:cx 0 :cy 0 :r 50 :fill "white" :text-fill "black" :stroke "black"} amap)]
+  (let [attrs (merge {:cx 0 :cy 0 :r 50 :text-fill "black" :stroke "black"} amap)]
     [:g
      [:circle (conj attrs {:key 1})]
      [:text {:x (- (:cx attrs) (if (< value 10) 17 33))
@@ -66,17 +66,33 @@
 (def rt3 (Math.sqrt 3))
 (def rt3o2 (/ rt3 2))
 
+(defn handle-start-drag [event]
+  (prn "click")
+  (esg/handle-start-drag event))
+
+
+
 (rum/defc dropper < rum/static [{:keys [:r :cx cy] :as amap} value]
-  [:g
+  [:g.but {:style {:cursor "pointer"}
+           :on-mouse-down handle-start-drag
+           :on-mouse-move esg/handle-move
+           :on-mouse-out esg/handle-out
+           :on-mouse-up esg/handle-end-drag
+           :on-touch-start esg/handle-start-drag
+           :on-touch-move esg/handle-move
+           :on-touch-end esg/handle-end-drag
+           }
    (number-in-circle amap value)
    [:polygon (merge amap {:points (str (- cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
                                        (+ cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
-                                       cx "," (+ cy (* 2 r)))})]]
+                                       cx "," (+ cy (* 2 r)))})]
+   [:g {:transform "translate(20,0)"}
+    [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (- cx r)) :y (+ cy (- (* 2 r) 6))})]
+    [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (+ r cx)) :y (+ cy (- (* 2 r) 6))})]
+    [:rect (merge amap {:fill "#ffffff" :width (* 3 r) :height 6 :x (- cx r) :y (+ cy (* 2 r))})]]
+   ]
+
   )
-
-
-(defn handle-start-drag [event]
-  (esg/handle-start-drag event))
 
 (defn move-by [event delta]
   (.stopPropagation event)
@@ -85,8 +101,6 @@
         new-state (+ delta (:state (:play-state game)))]
     (when (<= new-state (:game-size (:settings game)))
       (game/player-move common/Slippery new-state))))
-
-
 
 (rum/defc viewer-macro < rum/reactive []
   (let [game (rum/react (:game common/Slippery))
@@ -110,23 +124,19 @@
 
        (map-indexed
         #(dropper {:cx (+ (:x origin) (* r (+ 1 (* 2 %1) (- (count state)))))
-                   :cy (+ (:y origin) (- (/ (* r %2) 5)) 100)
+                   :cy (+ (:y origin) (- (/ (* r %2) 6)) 110)
                    :r r
                    :fill ((if (= (:player play-state) :a) :b :a) colours)
                    :stroke "none"
                    :text-fill "white"
-                   :on-mouse-down esg/handle-start-drag
-                   :on-mouse-move esg/handle-move
-                   :on-mouse-out esg/handle-out
-                   :on-mouse-up esg/handle-end-drag
-                   :on-touch-start esg/handle-start-drag
-                   :on-touch-move esg/handle-move
-                   :on-touch-end esg/handle-end-drag
                    } %2)
         state)
 
-
-
+       [:rect {:fill "white"
+              :x 0
+              :y (- (:vh view) 10)
+              :height 10
+              :width "100%"}]
 
        ]]]))
 
@@ -136,7 +146,8 @@
    [:h3.center-block
     {:style {:color "white"
              :max-width "800px"}}
-    "On your turn you can pull down one of the balloons. However the balloons must stay in strictly increasing order of height. The player who makes the last possible move wins."]])
+    "On your turn you can pull down one of the numbers. The first player to make a neat staircase of bricks wins."
+    ]])
 
 
 (defrecord Number-view []
