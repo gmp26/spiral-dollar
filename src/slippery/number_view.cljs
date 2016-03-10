@@ -110,7 +110,7 @@
 
        (map-indexed
         #(dropper {:cx (+ (:x origin) (* r (+ 1 (* 2 %1) (- (count state)))))
-                   :cy (- (:y origin) 100)
+                   :cy (+ (:y origin) (- (/ (* r %2) 5)) 100)
                    :r r
                    :fill ((if (= (:player play-state) :a) :b :a) colours)
                    :stroke "none"
