@@ -50,44 +50,77 @@
 ;;;;;;;; Game art ;;;;;;;;
 
 
-(rum/defc number-in-circle < rum/static [amap value]
+(rum/defc number-in-circle < rum/static [amap value index]
   (let [attrs (merge {:cx 0 :cy 0 :r 50 :text-fill "black" :stroke "black"} amap)]
     [:g
-     [:circle (conj attrs {:key 1})]
-     [:text {:x (- (:cx attrs) (if (< value 10) 17 33))
-             :y (+ (:cy attrs) 20)
-             :fill (:text-fill attrs)
-             :font-size 60
-             :key 2
-             } value]
+     [:circle (conj attrs {:key 1 :data-value value :data-index index})]
+
 ]))
 
 (def s30 0.5)
 (def rt3 (Math.sqrt 3))
 (def rt3o2 (/ rt3 2))
 
+(defn value->cy [value]
+  (- 310 (/ (* 20 value) 3)))
+
+
 (defn handle-start-drag [event]
-  (prn "click")
-  (esg/handle-start-drag event))
+  (let [target (.-target event)
+        svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)]
+    (prn "value: " (js/parseInt  (.getAttribute target "data-value")))
+    (prn "index" (js/parseInt (.getAttribute target "data-index")))
+    (swap! common/drag-state assoc :drag-start svg-coords)))
+
+(defn handle-move [event]
+  (let [target (.-target event)
+        index (js/parseInt (.getAttribute target "data-index"))
+        svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)
+        drag-start (:drag-start @common/drag-state)]
+    (if drag-start
+      (do
+        (let [[dx dy] (map - svg-coords drag-start)
+              actual (js/parseInt  (.getAttribute target "data-value"))
+              calc-value (max 1 (min actual (js/Math.round (- actual (/ (* dy 3) 20)))))]
+          (prn "actual-value" actual)
+          (prn "calc-value" (max 1 (min actual (js/Math.round (- actual (/ (* dy 3) 20))))))
+          (swap! (:game common/Slippery) update-in [:play-state :state index] calc-value)
+          )))))
+
+(defn handle-end-drag [event]
+  (let [target (.-target event)
+        svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)
+        diff (map - svg-coords (:drag-start @common/drag-state))]
+    (swap! common/drag-state assoc :drag-start nil)))
 
 
-
-(rum/defc dropper < rum/static [{:keys [:r :cx cy] :as amap} value]
+(rum/defc dropper < rum/static [{:keys [:r :cx :cy] :as amap} value index svg]
   [:g.but {:style {:cursor "pointer"}
            :on-mouse-down handle-start-drag
-           :on-mouse-move esg/handle-move
-           :on-mouse-out esg/handle-out
-           :on-mouse-up esg/handle-end-drag
+           :on-mouse-move handle-move
+           :on-mouse-out handle-end-drag
+           :on-mouse-up handle-end-drag
            :on-touch-start esg/handle-start-drag
            :on-touch-move esg/handle-move
            :on-touch-end esg/handle-end-drag
            }
-   (number-in-circle amap value)
+   (number-in-circle amap value index)
    [:polygon (merge amap {:points (str (- cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
                                        (+ cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
-                                       cx "," (+ cy (* 2 r)))})]
-   [:g {:transform "translate(20,0)"}
+                                       cx "," (+ cy (* 2 r)))
+                          :data-value value
+                          :data-index index})]
+   [:text {:x (- (:cx amap) (if (< value 10) 17 33))
+           :y (+ (:cy amap) 20)
+           :fill (:text-fill amap)
+           :font-size 60
+           :key 2
+           :style {:pointer-events "none"}
+           } value]
+   [:g {:transform "translate(-20,0)"
+        :style {:pointer-events "none"}}
     [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (- cx r)) :y (+ cy (- (* 2 r) 6))})]
+    [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 cx) :y (+ cy (- (* 2 r) 6))})]
     [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (+ r cx)) :y (+ cy (- (* 2 r) 6))})]
     [:rect (merge amap {:fill "#ffffff" :width (* 3 r) :height 6 :x (- cx r) :y (+ cy (* 2 r))})]]
    ]
@@ -129,7 +162,7 @@
                    :fill ((if (= (:player play-state) :a) :b :a) colours)
                    :stroke "none"
                    :text-fill "white"
-                   } %2)
+                   } %2 %1)
         state)
 
        [:rect {:fill "white"

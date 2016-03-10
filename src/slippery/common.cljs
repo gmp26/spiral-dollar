@@ -19,14 +19,14 @@
   (and (not (js.isNaN p))(>= p min-players) (<= p max-players)))
 
 ;; drag state
-(defonce drag-state (atom {:svg-point nil
-                           :drag-start nil}))
+(defonce svg-point (atom nil))
+(defonce drag-state (atom {:drag-start nil}))
 
 (defrecord Settings [title game-size coin-count limit think-time players viewer])
 (def initial-settings (Settings. "Silver Dollar" 40 6 4 2000 1 :number))
 
 (defn random-state [{:keys [:game-size :coin-count]}]
-  (reduce #(if (< (count %1) coin-count) (conj %1 %2) %1) (sorted-set) (map #(inc (rand-int game-size)) (range (+ 5 coin-count)))))
+  (vec (reduce #(if (< (count %1) coin-count) (conj %1 %2) %1) (sorted-set) (map #(inc (rand-int game-size)) (range (+ 5 coin-count))))))
 
 #_(defn random-state [{:keys [:game-size :coin-count]}]
   (take count (into (sorted-set) (into #{} (map #(inc (rand-int game-size)) (range (* 1 count)))))))

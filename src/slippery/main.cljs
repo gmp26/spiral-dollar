@@ -247,7 +247,8 @@
     [:.debug
      [:p (str (into {} (:settings game)))]
      [:p (str (into {} (:play-state game)))]
-     [:p (str (rum/react hist/history))]]))
+     [:p (str (rum/react hist/history))]
+     [:p (str (rum/react common/drag-state))]]))
 
 
 (rum/defc feedback < rum/reactive []

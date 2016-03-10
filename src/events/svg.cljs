@@ -58,25 +58,29 @@
   "mouse-out"
   [event]
   (.preventDefault event)
+  (.stopPropagation event)
   )
 
 (defn handle-start-drag
   "start dragging a line"
   [event]
   (.preventDefault event)
-  (prn (eventXY event))
+  (.stopPropagation event)
+  (eventXY event)
   )
 
 (defn handle-move
   "continue dragging a line"
   [event]
   (.preventDefault event)
+  (.stopPropagation event)
   )
 
 (defn handle-end-drag
   "handle end of drag. Convert to a tap if not moved"
   [event]
   (.preventDefault event)
+  (.stopPropagation event)
   )
 
 ;;;;;;;;;;;;;;;;;;;;;;
