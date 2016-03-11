@@ -20,7 +20,7 @@
 
 ;; drag state
 (defonce svg-point (atom nil))
-(defonce drag-state (atom {:drag-start nil}))
+(defonce drag-state (atom {:drag-start nil :state []}))
 
 (defrecord Settings [title game-size coin-count limit think-time players viewer])
 (def initial-settings (Settings. "Silver Dollar" 40 6 4 2000 1 :number))
