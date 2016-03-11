@@ -13,7 +13,7 @@
 ;; ui config
 ;;;
 (def view {:vw 620
-           :vh 400
+           :vh 500
            :pad-x 80
            :pad-y 80})
 
@@ -61,8 +61,11 @@
 (def rt3 (Math.sqrt 3))
 (def rt3o2 (/ rt3 2))
 
-(def dy-dv (/ 20 3))
-(def dv-dy (/ 3 20))
+(def r 40)
+(def dy-dv (/  (+ (:vh view) -10 (* -3 r)) (get-in @(:game common/Slippery) [:settings :game-size]))) ;(/ 30 6)
+(def dv-dy (/ 1 dy-dv))
+
+(def step-h dy-dv)
 
 (defn value->cy [value]
   (- 310 (* dy-dv value)))
@@ -101,9 +104,15 @@
         index (js/parseInt (.getAttribute target "data-index"))
         svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)
         diff (map - svg-coords (:drag-start @common/drag-state))]
-    (swap! (:game common/Slippery) update-in [:play-state :state index] Math.round)
+    (when (not (js/isNaN index))
+      (swap! (:game common/Slippery) update-in [:play-state :state index] Math.round))
     (swap! common/drag-state assoc :drag-start nil)))
 
+
+(rum/defc hook [x y]
+  [:g {:transform (str "translate(" x "," y ")")}
+   [:path {:fill "#000000" :stroke "none" :style {:pointer-events "none"}
+           :d "M20.3,17.8c-1.2,0.7-2.3,2-4.3,3.3c-2,1.3-2.9,2.2-4.1,2.2c-2.3,0-3.8-1.1-3.8-3.7c0-2.6,3-5,4.9-6c0.3-0.1,0.5-0.3,0.8-0.5 c2.8-0.8,4.8-3.4,4.8-6.4c0-3.7-3-6.7-6.7-6.7c-1.2,0-2.3,0.3-3.3,0.9C6.2,2.1,3.5,5.5,1,12c-2.2,5.7-1.3,15.8,8.2,18.7 c8.1,2.4,13.3-3.9,15.1-9.7C25.1,18.3,21.5,17.1,20.3,17.8"}]]  )
 
 (rum/defc dropper < rum/static [{:keys [:r :cx :cy] :as amap} value index svg]
   [:g.but {:style {:cursor "pointer"}
@@ -115,25 +124,20 @@
            :on-touch-move esg/handle-move
            :on-touch-end esg/handle-end-drag
            }
+   [:line {:line-width 1 :stroke "#000000" :stroke-width 2 :x1 (- cx 5) :x2 (- cx 5) :y1 cy :y2 (- cy (:vh view))}]
+      [:line {:line-width 1 :stroke "#000000" :stroke-width 2 :x1 (+ cx 5) :x2 (+ cx 5) :y1 cy :y2 (- cy (:vh view))}]
    [:polygon (merge amap {:points (str cx ", " (+ cy (* 2 r)) " "
                                        (apply
                                         str
                                         (map
                                          #(str (+ cx (* r (js/Math.cos %))) ", "
                                                (+ cy (* r (js/Math.sin %))) " ")
-                                         (range (/ Math.PI 6) (* -7 (/ Math.PI 6)) -0.02)))
+                                         (range (/ Math.PI 6) (* -7 (/ Math.PI 6)) -0.15)))
                                        cx "," (+ cy (* 2 r))
                                        )
                           :data-value value
                           :data-index index})]
 
-   (comment
-     (number-in-circle amap  value index)
-     [:polygon (merge amap {:points (str (- cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
-                                         (+ cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
-                                         cx "," (+ cy (* 2 r)))
-                            :data-value value
-                            :data-index index})])
    [:text {:x (- (:cx amap) (if (< value 10) 17 33))
            :y (+ (:cy amap) 20)
            :fill (:text-fill amap)
@@ -141,13 +145,13 @@
            :key 2
            :style {:pointer-events "none"}
            } (js/Math.round value)]
-   [:g {:transform "translate(-20,0)"
+   [:g {:transform "translate(0,0)"
         :style {:pointer-events "none"}}
-    (comment
-      [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (- cx r)) :y (+ cy (- (* 2 r) 6))})]
-      [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 cx) :y (+ cy (- (* 2 r) 6))})]
-      [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (+ r cx)) :y (+ cy (- (* 2 r) 6))})])
-    [:rect (merge amap {:fill "#ffffff" :width (* 2.4 r) :height 6 :x (+ 10 (- cx r)) :y (+ cy (* 2 r))})]]
+    [:rect (merge amap {:fill "#ffffff" :width 20 :height (* step-h index) :x (- cx r -10) :y (+ cy (- (* 2 r) (- step-h)))})]
+    [:rect (merge amap {:fill "#ffffff" :width 20 :height (* step-h index) :x (+ -30 r cx) :y (+ cy (- (* 2 r) (- step-h)))})]
+    [:rect (merge amap {:fill "#ffffff" :width (+ 20 r r) :height step-h :x (- cx r 10) :y (+ cy (* 2 r))})]]
+   (hook (- cx 12) (+ cy (* 2 r) -15))
+
    ]
 
   )
@@ -170,7 +174,7 @@
         origin {:x (/ (:vw view) 2) :y (/ (:vh view) 2)}
         r 40]
     [:.col-sm-12
-     [:div {:style {:margin-bottom "50px"}}]
+     [:div {:style {:margin-bottom "10px"}}]
      [:.row
       [:svg {:view-box (str "0 0 " (:vw view) " " (:vh view))
              :height "100%"
@@ -180,7 +184,7 @@
 
        (map-indexed
         #(dropper {:cx (+ (:x origin) (* r (+ 1 (* 2 %1) (- (count state)))))
-                   :cy (+ (:y origin) (- (/ (* r %2) 6)) 110)
+                   :cy (- (:vh view) (* 2 r) (* dy-dv %2) 10)
                    :r r
                    :fill ((if (= (:player play-state) :a) :b :a) colours)
                    :stroke "none"
@@ -202,7 +206,7 @@
    [:h3.center-block
     {:style {:color "white"
              :max-width "800px"}}
-    "On your turn you can pull down one of the numbers. The first player to make a neat staircase of bricks wins."
+    "You win a silver dollar if you are the crane driver who lowers the last step of the staircase into place."
     ]])
 
 
