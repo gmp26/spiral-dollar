@@ -61,16 +61,22 @@
 (def rt3 (Math.sqrt 3))
 (def rt3o2 (/ rt3 2))
 
+(def dy-dv (/ 20 3))
+(def dv-dy (/ 3 20))
+
 (defn value->cy [value]
-  (- 310 (/ (* 20 value) 3)))
+  (- 310 (* dy-dv value)))
+
+(defn cy->value [cy]
+  (- 310 (* dv-dy cy)))
 
 
 (defn handle-start-drag [event]
   (let [target (.-target event)
+        game @(:game common/Slippery)
+        state (:state (:play-state game))
         svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)]
-    (prn "value: " (js/parseInt  (.getAttribute target "data-value")))
-    (prn "index" (js/parseInt (.getAttribute target "data-index")))
-    (swap! common/drag-state assoc :drag-start svg-coords)))
+    (swap! common/drag-state assoc :drag-start svg-coords :state state)))
 
 (defn handle-move [event]
   (let [target (.-target event)
@@ -80,17 +86,22 @@
     (if drag-start
       (do
         (let [[dx dy] (map - svg-coords drag-start)
-              actual (js/parseInt  (.getAttribute target "data-value"))
-              calc-value (max 1 (min actual (js/Math.round (- actual (/ (* dy 3) 20)))))]
-          (prn "actual-value" actual)
-          (prn "calc-value" (max 1 (min actual (js/Math.round (- actual (/ (* dy 3) 20))))))
-          (swap! (:game common/Slippery) update-in [:play-state :state index] calc-value)
+              game @(:game common/Slippery)
+              state (:state (:play-state game))
+              index (js/parseInt  (.getAttribute target "data-index"))
+              original ((:state @common/drag-state) index)
+              left-value (if (zero? index) nil (get-in game [:play-state :state (dec index)]))
+              calc-value (max (- original (* dy dv-dy)) (inc left-value))
+              ]
+          (swap! (:game common/Slippery) assoc-in [:play-state :state index] (max 1 (min original  calc-value)))
           )))))
 
 (defn handle-end-drag [event]
   (let [target (.-target event)
+        index (js/parseInt (.getAttribute target "data-index"))
         svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)
         diff (map - svg-coords (:drag-start @common/drag-state))]
+    (swap! (:game common/Slippery) update-in [:play-state :state index] Math.round)
     (swap! common/drag-state assoc :drag-start nil)))
 
 
@@ -104,25 +115,39 @@
            :on-touch-move esg/handle-move
            :on-touch-end esg/handle-end-drag
            }
-   (number-in-circle amap value index)
-   [:polygon (merge amap {:points (str (- cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
-                                       (+ cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
-                                       cx "," (+ cy (* 2 r)))
+   [:polygon (merge amap {:points (str cx ", " (+ cy (* 2 r)) " "
+                                       (apply
+                                        str
+                                        (map
+                                         #(str (+ cx (* r (js/Math.cos %))) ", "
+                                               (+ cy (* r (js/Math.sin %))) " ")
+                                         (range (/ Math.PI 6) (* -7 (/ Math.PI 6)) -0.02)))
+                                       cx "," (+ cy (* 2 r))
+                                       )
                           :data-value value
                           :data-index index})]
+
+   (comment
+     (number-in-circle amap  value index)
+     [:polygon (merge amap {:points (str (- cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
+                                         (+ cx (* rt3o2 r)) ", " (+ cy (* r s30)) " "
+                                         cx "," (+ cy (* 2 r)))
+                            :data-value value
+                            :data-index index})])
    [:text {:x (- (:cx amap) (if (< value 10) 17 33))
            :y (+ (:cy amap) 20)
            :fill (:text-fill amap)
            :font-size 60
            :key 2
            :style {:pointer-events "none"}
-           } value]
+           } (js/Math.round value)]
    [:g {:transform "translate(-20,0)"
         :style {:pointer-events "none"}}
-    [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (- cx r)) :y (+ cy (- (* 2 r) 6))})]
-    [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 cx) :y (+ cy (- (* 2 r) 6))})]
-    [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (+ r cx)) :y (+ cy (- (* 2 r) 6))})]
-    [:rect (merge amap {:fill "#ffffff" :width (* 3 r) :height 6 :x (- cx r) :y (+ cy (* 2 r))})]]
+    (comment
+      [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (- cx r)) :y (+ cy (- (* 2 r) 6))})]
+      [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 cx) :y (+ cy (- (* 2 r) 6))})]
+      [:rect (merge amap {:fill "#ffffff" :width 20 :height 6 :x (+ 10 (+ r cx)) :y (+ cy (- (* 2 r) 6))})])
+    [:rect (merge amap {:fill "#ffffff" :width (* 2.4 r) :height 6 :x (+ 10 (- cx r)) :y (+ cy (* 2 r))})]]
    ]
 
   )
@@ -146,8 +171,6 @@
         r 40]
     [:.col-sm-12
      [:div {:style {:margin-bottom "50px"}}]
-
-
      [:.row
       [:svg {:view-box (str "0 0 " (:vw view) " " (:vh view))
              :height "100%"
