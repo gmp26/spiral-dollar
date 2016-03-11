@@ -108,21 +108,15 @@
       (swap! (:game common/Slippery) update-in [:play-state :state index] Math.round))
     (swap! common/drag-state assoc :drag-start nil)))
 
-
-(rum/defc hook [x y]
-  [:g {:transform (str "translate(" x "," y ")")}
-   [:path {:fill "#000000" :stroke "none" :style {:pointer-events "none"}
-           :d "M20.3,17.8c-1.2,0.7-2.3,2-4.3,3.3c-2,1.3-2.9,2.2-4.1,2.2c-2.3,0-3.8-1.1-3.8-3.7c0-2.6,3-5,4.9-6c0.3-0.1,0.5-0.3,0.8-0.5 c2.8-0.8,4.8-3.4,4.8-6.4c0-3.7-3-6.7-6.7-6.7c-1.2,0-2.3,0.3-3.3,0.9C6.2,2.1,3.5,5.5,1,12c-2.2,5.7-1.3,15.8,8.2,18.7 c8.1,2.4,13.3-3.9,15.1-9.7C25.1,18.3,21.5,17.1,20.3,17.8"}]]  )
-
 (rum/defc dropper < rum/static [{:keys [:r :cx :cy] :as amap} value index svg]
   [:g.but {:style {:cursor "pointer"}
            :on-mouse-down handle-start-drag
            :on-mouse-move handle-move
            :on-mouse-out handle-end-drag
            :on-mouse-up handle-end-drag
-           :on-touch-start esg/handle-start-drag
-           :on-touch-move esg/handle-move
-           :on-touch-end esg/handle-end-drag
+           :on-touch-start handle-start-drag
+           :on-touch-move handle-move
+           :on-touch-end handle-end-drag
            }
    [:line {:line-width 1 :stroke "#000000" :stroke-width 2 :x1 (- cx 5) :x2 (- cx 5) :y1 cy :y2 (- cy (:vh view))}]
       [:line {:line-width 1 :stroke "#000000" :stroke-width 2 :x1 (+ cx 5) :x2 (+ cx 5) :y1 cy :y2 (- cy (:vh view))}]
@@ -150,11 +144,12 @@
     [:rect (merge amap {:fill "#ffffff" :width 20 :height (* step-h index) :x (- cx r -10) :y (+ cy (- (* 2 r) (- step-h)))})]
     [:rect (merge amap {:fill "#ffffff" :width 20 :height (* step-h index) :x (+ -30 r cx) :y (+ cy (- (* 2 r) (- step-h)))})]
     [:rect (merge amap {:fill "#ffffff" :width (+ 20 r r) :height step-h :x (- cx r 10) :y (+ cy (* 2 r))})]]
-   (hook (- cx 12) (+ cy (* 2 r) -15))
-
-   ]
-
-  )
+   [:use {:xlink-href "#hook2"
+          :data-value value
+          :data-index index
+          :x (- cx 12)
+          :y (+ cy (* 2 r) -15)}]
+   ])
 
 (defn move-by [event delta]
   (.stopPropagation event)
@@ -181,7 +176,10 @@
              :width "100%"
              :id "svg-container"
              }
-
+       [:defs
+        [:path
+         {:id "hook2" :fill "#000000" :stroke "none" ;:style {:pointer-events "none"}
+          :d "M20.3,17.8c-1.2,0.7-2.3,2-4.3,3.3c-2,1.3-2.9,2.2-4.1,2.2c-2.3,0-3.8-1.1-3.8-3.7c0-2.6,3-5,4.9-6c0.3-0.1,0.5-0.3,0.8-0.5 c2.8-0.8,4.8-3.4,4.8-6.4c0-3.7-3-6.7-6.7-6.7c-1.2,0-2.3,0.3-3.3,0.9C6.2,2.1,3.5,5.5,1,12c-2.2,5.7-1.3,15.8,8.2,18.7 c8.1,2.4,13.3-3.9,15.1-9.7C25.1,18.3,21.5,17.1,20.3,17.8"}]]
        (map-indexed
         #(dropper {:cx (+ (:x origin) (* r (+ 1 (* 2 %1) (- (count state)))))
                    :cy (- (:vh view) (* 2 r) (* dy-dv %2) 10)
@@ -191,7 +189,6 @@
                    :text-fill "white"
                    } %2 %1)
         state)
-
        [:rect {:fill "white"
               :x 0
               :y (- (:vh view) 10)
