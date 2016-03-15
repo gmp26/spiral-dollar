@@ -225,7 +225,7 @@
                 :on-touch-end #(game/reset-game common/Slippery)
                 :key 1}
        [:span {:class "fa fa-refresh"}]
-       " Restart"]
+       " New game"]
      [:p {:class (str "status " over-class)
           :style {:width "100%"
                   :background-color (iview/get-fill viewer status)}
@@ -255,7 +255,7 @@
   (let [message (:feedback (:play-state (rum/react (:game common/Slippery))))]
     [:div {:style {:padding "0px 20px"
                    :position "relative"
-                   :top "-50px"}}
+                   :top "-250px"}}
      [:p {:style {:color "#ffffff"
                   :height "40px"
                   :font-size "18px"
@@ -279,7 +279,7 @@
        ;(show-game-state)
        ]
       (iview/game-viewer viewer play)
-      (feedback)
+      #_(feedback)
       (show-game-state)]]))
 
 

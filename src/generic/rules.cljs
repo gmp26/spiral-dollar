@@ -40,10 +40,14 @@
          possible-moves (map - heaps (map (partial bit-xor nimsum) heaps))
          move (rand-nth
                (if (pos? nimsum)
-                 (keep-indexed #(when (pos? %2) {:index %1 :move %2}) possible-moves)
-                 (keep-indexed #(when (> %2 1) {:index %1 :move 1}) heaps)))]
+                 (keep-indexed #(when (pos? %2)
+                                  {:index (- (dec (count state)) (* 2 %1)) :move %2})
+                               possible-moves)
+                 (keep-indexed #(when (< %2 -1)
+                                  {:index %1 :move 1})
+                               (map - (cons 0 state) state))))]
 
-     (update state (- (dec (count state)) (* 2 (:index move))) #(- % (:move move)))
+     (update state (:index move) #(- % (:move move)))
 
      )))
 

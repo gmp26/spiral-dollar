@@ -40,8 +40,9 @@
   game/IGame
 
   (is-over? [this]
-    (let [gm @(:game this)]
-      (if (= (:state (:play-state gm)) [])
+    (let [gm @(:game this)
+          state (:state (:play-state gm))]
+      (if (not-any? #(not= -1 %) (map - (cons 0 state) state))
         (:player (:play-state gm))
         false)))
 
@@ -82,7 +83,7 @@
   (reset-game [this]
     (let [game-state (:game this)]
       (hist/empty-history!)
-      (swap! game-state assoc :play-state (PlayState. :a "" (random-state initial-settings)))))
+      (swap! game-state assoc :play-state (PlayState. :a "" (random-state (:settings @(:game this)))))))
 
   (is-computer-turn?
     [this]
