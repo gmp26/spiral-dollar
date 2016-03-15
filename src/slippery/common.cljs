@@ -1,7 +1,9 @@
 (ns ^:figwheel-always slippery.common
     (:require [generic.game :as game]
+              [generic.rules :as rules]
               [generic.util :as util]
-              [generic.history :as hist]))
+              [generic.history :as hist]
+              [sprague-grundy.core :as sg]))
 
 ;; range validation
 (def min-game-size 10)
@@ -75,8 +77,8 @@
       (game/commit-play this move)))
 
   (commit-play [this new-play]
-    ;; todo
-    (swap! (:game this) assoc-in [:play-state :state] new-play)
+    ;; in this version the new state will already be realised by the drag operation
+    ;(swap! (:game this) assoc-in [:play-state :state] new-play)
     (when (not (game/is-over? this))
       (swap! (:game this) assoc-in [:play-state :player] (game/next-player this))
       (if (game/is-computer-turn? this)
@@ -128,7 +130,7 @@
           ]
       (if (empty? state)
         '(0)
-        (let [gaps (reverse (cons (first state) (map dec (map - (rest state) state))))
+        (let [gaps (reverse (cons (dec (first state)) (map dec (map - (rest state) state))))
               paired-gaps (partition 2 (conj (vec gaps) nil))]
           (if (or (nil? limit) (zero? limit))
             (map first paired-gaps)
@@ -137,11 +139,21 @@
   (optimal-outcome [this]
     (let [gm @(:game this)
           state (:state (:play-state gm))
-          sum (game/heap-equivalent this)]
-      (if (zero? sum)
+          heaps (game/heap-equivalent this)
+          nimsum (apply bit-xor heaps)]
+      (prn "heap-equivalent = " nimsum)
+      (if (zero? nimsum)
         (prn "todo: make random move")
-        (prn "todo: make the best move")
+        (do
+          (prn "todo: make the best move")
+          (map #(bit-xor nimsum %) heaps))
         ))))
+
+;;
+;; make pure version of this
+;;
+
+
 
 (defonce Slippery (->Game (atom {:settings initial-settings
                               :play-state initial-play-state})))

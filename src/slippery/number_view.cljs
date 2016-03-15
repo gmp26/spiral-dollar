@@ -75,44 +75,58 @@
 
 
 (defn handle-start-drag [event]
-  (let [target (.-target event)
-        game @(:game common/Slippery)
-        state (:state (:play-state game))
-        svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)]
-    (swap! common/drag-state assoc :drag-start svg-coords :state state)))
+  (when (game/player-can-move? common/Slippery)
+    (let [target (.-target event)
+          game @(:game common/Slippery)
+          index (js/parseInt  (.getAttribute target "data-index"))
+          state (:state (:play-state game))
+          svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)]
+      (swap! common/drag-state assoc :drag-start svg-coords :state state :index index))))
 
 (defn handle-move [event]
-  (let [target (.-target event)
-        index (js/parseInt (.getAttribute target "data-index"))
-        svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)
-        drag-start (:drag-start @common/drag-state)]
-    (if drag-start
-      (do
-        (let [[dx dy] (map - svg-coords drag-start)
-              game @(:game common/Slippery)
-              state (:state (:play-state game))
-              index (js/parseInt  (.getAttribute target "data-index"))
-              original ((:state @common/drag-state) index)
-              left-value (if (zero? index) nil (get-in game [:play-state :state (dec index)]))
-              calc-value (max (- original (* dy dv-dy)) (inc left-value))
-              ]
-          (swap! (:game common/Slippery) assoc-in [:play-state :state index] (max 1 (min original  calc-value)))
-          )))))
+  (when (game/player-can-move? common/Slippery)
+    (let [target (.-target event)
+          index (js/parseInt (.getAttribute target "data-index"))
+          svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)
+          drag-start (:drag-start @common/drag-state)]
+      (if drag-start
+        (do
+          (let [[dx dy] (map - svg-coords drag-start)
+                game @(:game common/Slippery)
+                state (:state (:play-state game))
+                index (:index @common/drag-state)
+                original ((:state @common/drag-state) index)
+                left-value (if (zero? index) nil (get-in game [:play-state :state (dec index)]))
+                dv (min (:limit (:settings game)) (* dy dv-dy))
+                calc-value (max (- original dv) (inc left-value))
+                ]
+            (swap! (:game common/Slippery) assoc-in [:play-state :state index] (max 1 (min original  calc-value)))
+            ))))))
 
 (defn handle-end-drag [event]
-  (let [target (.-target event)
-        index (js/parseInt (.getAttribute target "data-index"))
-        svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)
-        diff (map - svg-coords (:drag-start @common/drag-state))]
-    (when (not (js/isNaN index))
-      (swap! (:game common/Slippery) update-in [:play-state :state index] Math.round))
-    (swap! common/drag-state assoc :drag-start nil)))
+  (when (and (:drag-start @common/drag-state) (game/player-can-move? common/Slippery))
+    (let [game @(:game common/Slippery)
+          target (.-target event)
+          index (:index @common/drag-state)
+          original ((:state @common/drag-state) index)
+          svg-coords (esg/mouse->svg (util/el "svg-container") common/svg-point event)
+          diff (map - svg-coords (:drag-start @common/drag-state))]
+      (when (not (js/isNaN index))
+        (swap! (:game common/Slippery) update-in [:play-state :state index] Math.round))
+
+      ;; have we made a valid move?
+      (let [end-value (Math.round (nth (:state (:play-state game)) index))]
+        (prn "moved " end-value " " original)
+        (when < end-value original
+          (swap! common/drag-state assoc :drag-start nil)
+          (game/player-move common/Slippery [])))
+      )))
 
 (rum/defc dropper < rum/static [{:keys [:r :cx :cy] :as amap} value index svg]
   [:g.but {:style {:cursor "pointer"}
            :on-mouse-down handle-start-drag
            :on-mouse-move handle-move
-           :on-mouse-out handle-end-drag
+           ;:on-mouse-out handle-end-drag
            :on-mouse-up handle-end-drag
            :on-touch-start handle-start-drag
            :on-touch-move handle-move
@@ -175,6 +189,8 @@
              :height "100%"
              :width "100%"
              :id "svg-container"
+             :on-mouse-up handle-end-drag
+             :on-touch-end handle-end-drag
              }
        [:defs
         [:path
