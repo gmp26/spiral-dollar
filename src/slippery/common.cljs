@@ -30,11 +30,6 @@
 (defn random-state [{:keys [:game-size :coin-count]}]
   (vec (reduce #(if (< (count %1) coin-count) (conj %1 %2) %1) (sorted-set) (map #(inc (rand-int game-size)) (range (+ 5 coin-count))))))
 
-#_(defn random-state [{:keys [:game-size :coin-count]}]
-  (take count (into (sorted-set) (into #{} (map #(inc (rand-int game-size)) (range (* 1 count)))))))
-
-#_(defn random-state [{:keys [:game-size :coin-count]}]
-  (take count (apply sorted-set (map #(inc (rand-int game-size)) (range count)))))
 
 (defrecord PlayState [player feedback state])
 (def initial-play-state (PlayState. :a "" (random-state initial-settings)))
@@ -87,7 +82,7 @@
   (reset-game [this]
     (let [game-state (:game this)]
       (hist/empty-history!)
-      (swap! game-state assoc :play-state (PlayState. :a "" [3 10 21 30]))))
+      (swap! game-state assoc :play-state (PlayState. :a "" (random-state initial-settings)))))
 
   (is-computer-turn?
     [this]
@@ -108,9 +103,13 @@
   (schedule-computer-turn
     [this]
     ;; todo
-    (let [move (- (game/optimal-outcome this) (:state (:play-state @(:game this))))]
-      (swap! (:game this) assoc-in [:play-state :feedback] (str "Computer goes " move)))
-    (util/delayed-call (:think-time (:settings @(:game this))) #(game/play-computer-turn this)))
+    (let [new-state (game/optimal-outcome this)
+          move (map - new-state (:state (:play-state @(:game this))))]
+      (swap! (:game this) assoc-in [:play-state :feedback] (str "Computer goes " move))
+      (util/delayed-call (:think-time (:settings @(:game this)))
+                         #(do
+                            (swap! (:game this) assoc-in [:play-state :state] new-state)
+                            (swap! (:game this) assoc-in [:play-state :player] (game/next-player this))))))
 
   (followers
     [this state]
@@ -124,36 +123,13 @@
 
   (heap-equivalent
     [this]
-    (prn "todo: heap-equivalent")
-    (let [state (:state (:play-state @(:game this)))
-          limit (:limit (:settings @(:game this)))
-          ]
-      (if (empty? state)
-        '(0)
-        (let [gaps (reverse (cons (dec (first state)) (map dec (map - (rest state) state))))
-              paired-gaps (partition 2 (conj (vec gaps) nil))]
-          (if (or (nil? limit) (zero? limit))
-            (map first paired-gaps)
-            (map (comp #(mod % (inc limit)) first) paired-gaps))))))
+    (let [gm @(:game this)]
+      (rules/heap-equivalent (:limit (:settings gm)) (:state (:play-state gm))))
+    )
 
   (optimal-outcome [this]
-    (let [gm @(:game this)
-          state (:state (:play-state gm))
-          heaps (game/heap-equivalent this)
-          nimsum (apply bit-xor heaps)]
-      (prn "heap-equivalent = " nimsum)
-      (if (zero? nimsum)
-        (prn "todo: make random move")
-        (do
-          (prn "todo: make the best move")
-          (map #(bit-xor nimsum %) heaps))
-        ))))
-
-;;
-;; make pure version of this
-;;
-
-
+    (let [gm @(:game this)]
+      (rules/optimal-outcome (:limit (:settings gm)) (:state (:play-state gm))))))
 
 (defonce Slippery (->Game (atom {:settings initial-settings
                               :play-state initial-play-state})))
