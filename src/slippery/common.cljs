@@ -106,11 +106,12 @@
     ;; todo
     (let [new-state (game/optimal-outcome this)
           move (map - new-state (:state (:play-state @(:game this))))]
-      (swap! (:game this) assoc-in [:play-state :feedback] (str "Computer goes " move))
+      ;(swap! (:game this) assoc-in [:play-state :feedback] (str "Computer goes " move))
       (util/delayed-call (:think-time (:settings @(:game this)))
                          #(do
                             (swap! (:game this) assoc-in [:play-state :state] new-state)
-                            (swap! (:game this) assoc-in [:play-state :player] (game/next-player this))))))
+                            (when (not (game/is-over? this))
+                              (swap! (:game this) assoc-in [:play-state :player] (game/next-player this)))))))
 
   (followers
     [this state]

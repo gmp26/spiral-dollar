@@ -11,7 +11,6 @@
                [slippery.number-view :refer [Number-view]]
                [cljsjs.jquery :as jq]
                [cljsjs.bootstrap :as bs]
-               [events.svg :as esg]
                ))
 
 (enable-console-print!)
@@ -29,22 +28,48 @@
 
 (defn one-player [event]
   (.preventDefault event)
+  (.stopPropagation event)
   (change-player-count 1))
 
 (defn two-player [event]
   (.preventDefault event)
+  (.stopPropagation event)
   (change-player-count 2))
+
+(defn limited [event]
+  (.preventDefault event)
+  (.stopPropagation event)
+  (swap! (:game common/Slippery) assoc-in [:settings :limit] 20))
+
+(defn unlimited [event]
+  (.preventDefault event)
+  (.stopPropagation event)
+  (swap! (:game common/Slippery) assoc-in [:settings :limit] 1000)
+  )
+
+(defn computer-first [event]
+  (.preventDefault event)
+  (.stopPropagation event)
+  (swap! (:game common/Slippery) assoc-in [:play-state :player] :b))
+
+(defn you-first [event]
+  (.preventDefault event)
+  (.stopPropagation event)
+  (swap! (:game common/Slippery) assoc-in [:play-state :player] :a)
+  )
 
 (defn undo
   "undo button handler"
   [event]
   (.preventDefault event)
+  (.stopPropagation event)
   (swap! (:game common/Slippery) #(assoc % :play-state (hist/undo! (:play-state %)))))
 
 (defn redo
   "redo button handler"
   [event]
   (.preventDefault event)
+  (.stopPropagation event)
   (swap! (:game common/Slippery) #(assoc % :play-state (hist/redo! (:play-state %)))))
 
 (defn validated-int [value min-val max-val]
@@ -101,7 +126,37 @@
   "remove eventhandler to avoid memory leak"
   [event]
   (routing/save-settings)
-  (.off (js/$ "#settings") "hidden.bs.modal"))
+  (.off (js/$ "#settings") "hidden.bs.modal")
+  (when (game/is-computer-turn? common/Slippery)
+    (game/schedule-computer-turn common/Slippery)))
+
+
+(rum/defc selector < rum/static [select-1? label1 label2 action1 action2]
+  [:div
+   [:button.btn.btn-default.dropdown-toggle
+    {:type "button"
+     :data-toggle "dropdown"
+     :aria-haspopup "true"
+     :aria-expanded "false"}
+    (if (select-1?) label1 label2)
+    [:span.caret]]
+   [:ul.dropdown-menu
+    [:li [:a {:href "#" :on-click action1} label1]]
+    [:li [:a {:href "#" :on-click action2} label2]]]])
+
+(rum/defc spinner < rum/static [value on-change on-up on-down]
+  [:div
+   [:span.spinner.col-sm-7
+    [:button.up.no-select {:on-click on-up
+                           :on-touch-start on-up} "+"]
+    [:button.down.no-select {:on-click on-down
+                             :on-touch-start on-down} "-"]
+    [:input.num {:type "number"
+                 :pattern "\\d*"
+                 :input-mode "numeric"
+                 :on-change on-change
+                 :value value}]]])
+
 
 (rum/defc settings-modal < rum/reactive []
   (let [active (fn [players player-count]
@@ -128,58 +183,48 @@
 
          [:.row {:style {:padding "10px 0"}}
 
-          [:label.col-sm-4 {:for "p1"} "Choose game"]
-          [:.btn-group.col-sm-8
-           [:button.btn.btn-default.dropdown-toggle
-            {:type "button"
-             :data-toggle "dropdown"
-             :aria-haspopup "true"
-             :aria-expanded "false"}
-            (if (= :number (:viewer (:settings game))) "Silver Dollar " "Slippery Snail ")
-            [:span.caret]]
-           [:ul.dropdown-menu
-            [:li [:a {:href "#" :on-click #(switch-view :number)} "Silver Dollar"]]
-            [:li [:a {:href "#" :on-click #(switch-view :island)} "Slippery Snail"]]]]][:.row {:style {:padding "20px 0"}}
+          [:label.col-sm-4 "Choose game"]
+          [:.col-sm-8
+           (selector #(= :number (:viewer (:settings game)))
+                     "Silver Dollar" "Slippery Snail"
+                     #(switch-view :number)
+                     #(switch-view :island))]]
 
-          [:label.col-sm-4 {:for "p1"} "Game mode"]
-          [:.btn-group.col-sm-8
-           [:button.btn.btn-default.dropdown-toggle
-            {:type "button"
-             :data-toggle "dropdown"
-             :aria-haspopup "true"
-             :aria-expanded "false"}
-            (if (= 1 (:players (:settings game))) "Play the computer " "Play an opponent ")
-            [:span.caret]]
-           [:ul.dropdown-menu
-            [:li [:a {:href "#" :on-click one-player} "Play the computer"]]
-            [:li [:a {:href "#" :on-click two-player} "Play an opponent"]]]]]
+         [:.row {:style {:padding "10px 0"}}
+          [:label.col-sm-4 "Game mode"]
+          [:.col-sm-8
+           (selector #(= 1 (:players (:settings game)))
+                     "Play the computer " "Play an opponent "
+                     one-player two-player)]]
+
+         (when (= 1 (:players (:settings game)))
+           [:.row {:style {:padding "10px 0"}}
+            [:label.col-sm-4 "First player:"]
+            [:.col-sm-8
+             (selector #(= :b (:player (:play-state game)))
+                       "The computer " "You "
+                       computer-first you-first)]])
 
          [:.row {:style {:padding "10px 0"}}
           [:label.col-sm-5 {:for "p2"} "Game size"]
-          [:span.spinner.col-sm-7
-           [:button.up.no-select {:on-click handle-inc-game-size
-                                  :on-touch-start handle-inc-game-size} "+"]
-           [:button.down.no-select {:on-click handle-dec-game-size
-                                    :on-touch-start handle-dec-game-size} "-"]
-           [:input.num {:type "number"
-                        :pattern "\\d*"
-                        :input-mode "numeric"
-                        :on-change new-pad-count
-                        :value (:game-size (:settings game))}]]]
+          (spinner (:game-size (:settings game)) new-pad-count handle-inc-game-size handle-dec-game-size)]
+
          [:.row {:style {:padding "10px 0"}}
-          [:label.col-sm-5 {:for "p2"} (if (= :number (:viewer (:settings game)))
-                                         "Each turn, add no more than" "Each turn, bridge no more than")]
-          [:span.spinner.col-sm-7
-           [:button.up.no-select {:on-click handle-inc-limit
-                                  :on-touch-start handle-inc-limit} "+"]
-           [:button.down.no-select {:on-click handle-dec-limit
-                                    :on-touch-start handle-dec-limit} "-"]
-           [:input.num {:type "number"
-                        :pattern "\\d*"
-                        :input-mode "numeric"
-                        :on-change new-limit
-                        :value (:limit (:settings game))}]
-           ]]]]]]]))
+          [:label.col-sm-4 {:for "p3"} "Moves are "]
+          [:.col-sm-8
+           (selector #(= 1000 (:limit (:settings game)))
+                     "Unlimited " "Limited "
+                     unlimited limited)]]
+
+
+         (when (not= 1000 (:limit (:settings game)))
+           [:.row {:style {:padding "10px 0"}}
+            [:label.col-sm-5 {:for "p2"} (if (= :number (:viewer (:settings game)))
+                                           "Move no more than")]
+            (spinner (:limit (:settings game)) new-limit handle-inc-limit handle-dec-limit)])
+
+
+         ]]]]]))
 
 (rum/defc tool-bar < rum/reactive []
   (let [active (fn [players player-count]
@@ -232,7 +277,7 @@
           :key 2} (iview/get-message viewer status)]]))
 
 (rum/defc footer < rum/reactive []
-  "render footer with rules and copyright"
+
 
   [:section {:id "footer"}
    [:h2
