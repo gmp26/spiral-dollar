@@ -1,10 +1,10 @@
 (ns ^:figwheel-always slippery.routing
-    (:require [goog.events :as events]
-              [goog.history.EventType :as EventType]
-              [secretary.core :as secretary :refer-macros [defroute]]
-              [slippery.common :as common]
-              )
-    (:import goog.History))
+  (:require [goog.events]
+            [goog.history.EventType :as EventType]
+            [secretary.core :as secretary :refer-macros [defroute]]
+            [slippery.common :as common]
+            [generic.game :as game])
+  (:import goog.History))
 
 (enable-console-print!)
 
@@ -12,109 +12,162 @@
 ;; basic hash routing to configure some game options
 ;;
 
-
-
 (secretary/set-config! :prefix "#")
 
+(defn current-settings []
+  (:settings @(:game common/Slippery)))
 
-(defn dispatching [t l p v]
-  (let [game-size (js.parseInt t)
-        limit (js.parseInt l)
-        players (js.parseInt p)
-        viewer v]
+(defn dispatching
 
-    (prn "viewer " viewer)
-    (when (and (common/check-game-size t) (common/check-limit l) (common/check-players p))
-      (swap! (:game common/Slippery) assoc-in [:settings :game-size] game-size)
-      (swap! (:game common/Slippery) assoc-in [:settings :limit] limit)
-      (swap! (:game common/Slippery) assoc-in [:settings :players] players)
-      (common/switch-view viewer)
-      )))
+  ([]
+   (dispatching (:viewer (current-settings))
+                (:game-size (current-settings))
+                (:coin-count (current-settings))
+                (:limit (current-settings))
+                (:players (current-settings))
+                0))
 
-(defroute full-island
-  "/island/:game-size/:limit/:players" {:as params}
-  (dispatching (:game-size params)
-               (:limit params)
-               (:players params)
-               :island))
+  ([v]
+   (dispatching v
+                (:game-size (current-settings))
+                (:coin-count (current-settings))
+                (:limit (current-settings))
+                (:players (current-settings))
+                0))
+
+  ([v gz]
+   (dispatching v gz
+                (:coin-count (current-settings))
+                (:limit (current-settings))
+                (:players (current-settings))
+                0))
+
+  ([v gz cc]
+   (dispatching v gz cc
+                (:limit (current-settings))
+                (:players (current-settings))
+                0))
+
+  ([v gz cc l]
+   (dispatching v gz cc l
+                (:players (current-settings))
+                0))
+
+  ([v gz cc l p]
+   (dispatching v gz cc l p 0))
+
+  ([v gz cc l p f]
+   (let [viewer v
+         game-size (js.parseInt gz)
+         coin-count (js.parseInt cc)
+         limit (js.parseInt l)
+         players (js.parseInt p)
+         first-player (js.parseInt f)]
+     (prn v ", " gz ", " cc ", " l ", " p ", " f)
+     (when (and (common/check-game-size game-size)
+                (common/check-coin-count coin-count)
+                (common/check-limit limit)
+                (common/check-players p))
+       (swap! (:game common/Slippery) assoc-in [:settings :game-size] game-size)
+       (swap! (:game common/Slippery) assoc-in [:settings :coin-count] coin-count)
+       (swap! (:game common/Slippery) assoc-in [:settings :limit] limit)
+       (swap! (:game common/Slippery) assoc-in [:settings :players] players)
+       (let [fp (if (or (= 2 players)
+                        (and (= 1 players)
+                             (zero? first-player))) :a :b)]
+         (swap! (:game common/Slippery) assoc-in [:play-state :player] fp))
+       (common/switch-view viewer)
+       (prn @(:game common/Slippery))
+       (if (game/is-computer-turn? common/Slippery)
+         (game/schedule-computer-turn common/Slippery))))))
 
 (defroute
-  "/island/:game-size/:limit" {:as params}
-  (dispatching (:game-size params)
+  full-island
+  "/island/:game-size/:coin-count/:limit/:players/:first-player" {:as params}
+  (dispatching :island
+               (:game-size params)
+               (:coin-count params)
                (:limit params)
-               (:players (:settings @(:game common/Slippery)))
-               :island))
+               (:players params)
+               (:first-player params)))
+
+(defroute
+  "/island/:game-size/:coin-count/:limit/:players" {:as params}
+  (dispatching :island
+               (:game-size params)
+               (:coin-count params)
+               (:limit params)
+               (:players params)))
+
+(defroute
+  "/island/:game-size/:coin-count/:limit" {:as params}
+  (dispatching :island
+               (:game-size params)
+               (:coin-count params)
+               (:limit params)))
+
+(defroute
+  "/island/:game-size/:coin-count" {:as params}
+  (dispatching :island
+               (:game-size params)
+               (:coin-count params)))
 
 (defroute
   "/island/:game-size" {:as params}
-  (dispatching (:game-size params)
-               (:limit (:settings @(:game common/Slippery)))
-               (:players (:settings @(:game common/Slippery)))
-               :island))
+  (dispatching :island
+               (:game-size params)))
 
 (defroute
   "/island" {:as params}
-  (dispatching (:game-size (:settings @(:game common/Slippery)))
-               (:limit (:settings @(:game common/Slippery)))
-               (:players (:settings @(:game common/Slippery)))
-               :island))
-
-
-(defroute full-number
-  "/number/:game-size/:limit/:players" {:as params}
-  (dispatching (:game-size params)
-               (:limit params)
-               (:players params)
-               :number))
+  (dispatching :island))
 
 (defroute
-  "/number/:game-size/:limit" {:as params}
-  (dispatching (:game-size params)
+  full-number
+  "/number/:game-size/:coin-count/:limit/:players/:first-player" {:as params}
+  (dispatching :number
+               (:game-size params)
+               (:coin-count params)
                (:limit params)
-               (:players (:settings @(:game common/Slippery)))
-               :number))
+               (:players params)
+               (:first-player params)))
+
+(defroute
+  "/number/:game-size/:coin-count/:limit/:players" {:as params}
+  (dispatching :number
+               (:game-size params)
+               (:coin-count params)
+               (:limit params)
+               (:players params)))
+
+(defroute
+  "/number/:game-size/:coin-count/:limit" {:as params}
+  (dispatching :number
+               (:game-size params)
+               (:coin-count params)
+               (:limit params)))
+
+(defroute
+  "/number/:game-size/:coin-count" {:as params}
+  (dispatching :number
+               (:game-size params)
+               (:coin-count params)))
 
 (defroute
   "/number/:game-size" {:as params}
-  (dispatching (:game-size params)
-               (:limit (:settings @(:game common/Slippery)))
-               (:players (:settings @(:game common/Slippery)))
-               :number))
+  (dispatching :number
+               (:game-size params)))
 
 (defroute
   "/number" {:as params}
-  (dispatching (:game-size params)
-               (:limit (:settings @(:game common/Slippery)))
-               (:players (:settings @(:game common/Slippery)))
-               :number))
-
-(defroute
-  "/:game-size/:limit/:players" {:as params}
-  (dispatching (:game-size params)
-               (:limit params)
-               (:players params)
-               :number))
-
-(defroute
-  "/:game-size/:limit" {:as params}
-  (dispatching (:game-size params)
-               (:limit params)
-               (:players (:settings @(:game common/Slippery)))
-               :number))
-
-(defroute
-  "/:game-size" {:as params}
-  (dispatching (:game-size params)
-               (:limit (:settings @(:game common/Slippery)))
-               (:players (:settings @(:game common/Slippery)))
-               :number))
+  (dispatching :number))
 
 (defroute
   "" {:as params}
-  (dispatching (:game-size params)
-               (:limit (:settings @(:game common/Slippery)))
-               (:players (:settings @(:game common/Slippery)))
-               :number))
+  (dispatching))
+
+(defroute
+  "/" {:as params}
+  (dispatching))
 
 (defn params->url
   "convert parameters to a url"

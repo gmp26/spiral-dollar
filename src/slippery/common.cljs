@@ -2,19 +2,22 @@
     (:require [generic.game :as game]
               [generic.rules :as rules]
               [generic.util :as util]
-              [generic.history :as hist]
-              [sprague-grundy.core :as sg]))
+              [generic.history :as hist]))
 
 ;; range validation
 (def min-game-size 10)
 (def max-game-size 40)
+(def min-coin-count 2)
+(def max-coin-count 6)
 (def min-limit 1)
 (def max-limit max-game-size)
 (def min-players 1)
 (def max-players 2)
 
-(defn check-game-size [t]
-  (and (not (js.isNaN t)) (>= t min-game-size) (<= t max-game-size)))
+(defn check-game-size [gz]
+  (and (not (js.isNaN gz)) (>= gz min-game-size) (<= gz max-game-size)))
+(defn check-coin-count [cc]
+  (and (not (js.isNaN cc))(>= cc min-coin-count) (<= cc max-coin-count)))
 (defn check-limit [l]
   (and (not (js.isNaN l))(>= l min-limit) (<= l max-limit)))
 (defn check-players [p]
@@ -33,7 +36,6 @@
 
 (defrecord PlayState [player feedback state])
 (def initial-play-state (PlayState. :a "" (random-state initial-settings)))
-
 
 
 (defrecord Game [game]
@@ -103,15 +105,12 @@
 
   (schedule-computer-turn
     [this]
-    ;; todo
-    (let [new-state (game/optimal-outcome this)
-          move (map - new-state (:state (:play-state @(:game this))))]
-      ;(swap! (:game this) assoc-in [:play-state :feedback] (str "Computer goes " move))
+    (let [new-state (game/optimal-outcome this)]
       (util/delayed-call (:think-time (:settings @(:game this)))
                          #(do
-                            (swap! (:game this) assoc-in [:play-state :state] new-state)
-                            (when (not (game/is-over? this))
-                              (swap! (:game this) assoc-in [:play-state :player] (game/next-player this)))))))
+                           (swap! (:game this) assoc-in [:play-state :state] new-state)
+                           (when (not (game/is-over? this))
+                             (swap! (:game this) assoc-in [:play-state :player] (game/next-player this)))))))
 
   (followers
     [this state]

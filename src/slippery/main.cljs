@@ -3,14 +3,11 @@
                [generic.game :as game]
                [generic.util :as util]
                [generic.history :as hist]
-               [generic.components :as comp]
                [generic.viewer :as iview :refer [IViewer]]
                [slippery.routing :as routing]
                [slippery.common :as common]
                [slippery.spiral-view :refer [Spiral-view]]
                [slippery.number-view :refer [Number-view]]
-               [cljsjs.jquery :as jq]
-               [cljsjs.bootstrap :as bs]
                ))
 
 (enable-console-print!)
@@ -114,12 +111,13 @@
   (common/switch-view viewer)
   (routing/save-settings))
 
-(defn hidden-settings [event]
+(defn hidden-settings
+  [_]
   (routing/save-settings))
 
 (defn open-settings
   "add modal close detection"
-  [event]
+  [_]
   (.on (js/$ "#settings") "hidden.bs.modal" hidden-settings))
 
 (defn close-settings
