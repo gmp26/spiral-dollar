@@ -14,43 +14,42 @@
 
 (secretary/set-config! :prefix "#")
 
-(defn current-settings []
-  (:settings @(:game common/Slippery)))
+
 
 (defn dispatching
 
   ([]
-   (dispatching (:viewer (current-settings))
-                (:game-size (current-settings))
-                (:coin-count (current-settings))
-                (:limit (current-settings))
-                (:players (current-settings))
+   (dispatching (:viewer (:settings @(:game common/Slippery)))
+                (:game-size (:settings @(:game common/Slippery)))
+                (:coin-count (:settings @(:game common/Slippery)))
+                (:limit (:settings @(:game common/Slippery)))
+                (:players (:settings @(:game common/Slippery)))
                 0))
 
   ([v]
    (dispatching v
-                (:game-size (current-settings))
-                (:coin-count (current-settings))
-                (:limit (current-settings))
-                (:players (current-settings))
+                (:game-size (:settings @(:game common/Slippery)))
+                (:coin-count (:settings @(:game common/Slippery)))
+                (:limit (:settings @(:game common/Slippery)))
+                (:players (:settings @(:game common/Slippery)))
                 0))
 
   ([v gz]
    (dispatching v gz
-                (:coin-count (current-settings))
-                (:limit (current-settings))
-                (:players (current-settings))
+                (:coin-count (:settings @(:game common/Slippery)))
+                (:limit (:settings @(:game common/Slippery)))
+                (:players (:settings @(:game common/Slippery)))
                 0))
 
   ([v gz cc]
    (dispatching v gz cc
-                (:limit (current-settings))
-                (:players (current-settings))
+                (:limit (:settings @(:game common/Slippery)))
+                (:players (:settings @(:game common/Slippery)))
                 0))
 
   ([v gz cc l]
    (dispatching v gz cc l
-                (:players (current-settings))
+                (:players (:settings @(:game common/Slippery)))
                 0))
 
   ([v gz cc l p]

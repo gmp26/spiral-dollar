@@ -113,7 +113,6 @@
                              (swap! (:game this) assoc-in [:play-state :player] (game/next-player this)))))))
 
   (followers
-    "Hi there"
     [this state]
     (let [gm @(:game this)
           settings (:settings gm)
