@@ -134,6 +134,7 @@
   [event]
   (routing/save-settings)
   (.off (js/$ "#settings") "hidden.bs.modal")
+  (game/reset-game common/Slippery)
   (when (game/is-computer-turn? common/Slippery)
     (game/schedule-computer-turn common/Slippery)))
 
@@ -326,7 +327,7 @@
         play (:play-state game)]
     [:section#game-container.container {:style {:max-width "600px"}}
      (settings-modal)
-     [:div.row ;{:class "full-width"}
+     [:div.row                                              ;{:class "full-width"}
       [:.col-sm-12
        [:p.center-block {:id "header"} (:title (:settings game))]
        (tool-bar play)
@@ -336,7 +337,8 @@
        ]
       (iview/game-viewer viewer play)
       #_(feedback)
-      (show-game-state)]]))
+      ;(show-game-state)
+      ]]))
 
 
 ;;;

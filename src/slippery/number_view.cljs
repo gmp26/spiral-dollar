@@ -221,6 +221,13 @@
               :height 10
               :width "100%"}]
 
+       [:rect {:fill   "white"
+               :x      (+ r 10 (:x origin) (* r (+ 1 (* 2 (dec (count state))) (- (count state)))))
+               :y      (- (:vh view) (+ (* (dy-dv) (count state)) 10))
+               :height (+ (* (dy-dv) (count state)) 10)
+               :width  400
+               }]
+
        ]]]))
 
 

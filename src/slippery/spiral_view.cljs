@@ -1,49 +1,49 @@
 (ns ^:figwheel-always slippery.spiral-view
-    (:require [rum.core :as rum]
-              [generic.game :as game]
-              [generic.util :as util]
-              [generic.history :as hist]
-              [generic.components :as comp]
-              [generic.viewer :refer [IViewer]]
-              [slippery.common :as common]
-              [cljsjs.jquery :as jq]
-              [cljsjs.bootstrap :as bs]
-              [events.svg :as esg]))
+  (:require [rum.core :as rum]
+            [generic.game :as game]
+            [generic.util :as util]
+            [generic.history :as hist]
+            [generic.components :as comp]
+            [generic.viewer :refer [IViewer]]
+            [slippery.common :as common]
+            [cljsjs.jquery :as jq]
+            [cljsjs.bootstrap :as bs]
+            [events.svg :as esg]))
 
 ;;;
 ;; ui config
 ;;;
-(def view {:vw 620
-           :vh 620
+(def view {:vw    620
+           :vh    620
            :pad-x 80
            :pad-y 80})
 
-(def messages {:yours "Your turn"
-               :als   "My turn"
+(def messages {:yours   "Your turn"
+               :als     "My turn"
                :as-turn "Blue's turn"
                :bs-turn "Red's turn"
                :you-win "You win!"
-               :al-win "Computer wins!"
-               :a-win "Blue won!"
-               :b-win "Red won!"
-               :draw  "It's a draw!"
+               :al-win  "Computer wins!"
+               :a-win   "Blue won!"
+               :b-win   "Red won!"
+               :draw    "It's a draw!"
                })
 
-(def colours {:a "rgb(0, 153, 255)"
-              :b "rgb(238, 68, 102)"
+(def colours {:a    "rgb(0, 153, 255)"
+              :b    "rgb(238, 68, 102)"
               :none "rgb(220,255,220)"
               :draw "rgb(74, 157, 97)"
               })
 
-(def message-colours {:yours :b
-                      :als   :a
+(def message-colours {:yours   :b
+                      :als     :a
                       :as-turn :a
                       :bs-turn :b
                       :you-win :b
-                      :al-win :a
-                      :a-win :a
-                      :b-win :b
-                      :draw :draw
+                      :al-win  :a
+                      :a-win   :a
+                      :b-win   :b
+                      :draw    :draw
                       })
 
 (def computer-think-time 2000)
@@ -59,38 +59,40 @@
   [history play-state]
   ((set (map #(dissoc % :feedback) (:undo history))) (dissoc play-state :feedback)))
 
-(rum/defc pads-reached-by < rum/reactive [view pads player]
+(rum/defc
+  pads-reached-by < rum/reactive [view pads player]
   [:g
    (map
-    #(let [p (esg/xy->viewport view %)]
+     #(let [p (esg/xy->viewport view %)]
        ;; render flag
-       [:text.numb {:x (- (first p) 15)
-                    :y (+  (second p) 10)
+       [:text.numb {:x           (- (first p) 15)
+                    :y           (+ (second p) 10)
                     :font-family "FontAwesome"
-                    :font-size "30"
-                    :fill (player colours)
-                    } "\uf041"]) ; map-marker
-    (keep-indexed (fn [index point]
-                    (when (reached? (rum/react hist/history) (common/PlayState.
-                                        player ""  index))
-                      point))
-                  pads))])
+                    :font-size   "30"
+                    :fill        (player colours)
+                    } "\uf041"])                            ; map-marker
+     (keep-indexed (fn [index point]
+                     (when (reached? (rum/react hist/history) (common/PlayState.
+                                                                player "" index))
+                       point))
+                   pads))])
 
-(defn show-players [view pads]
-  ;; todo!
+(defn show-players
+  "show player positions on spiral"
+  [view pads]
   (let [play-state (:play-state @(:game common/Slippery))
         p-locs (map #(esg/xy->viewport view %) (map #(get pads %) (:state play-state)))]
     (prn "pad-locations" p-locs)
     (map-indexed
-      (fn [index p] [:text.numb {:x            (- (first p) 15)
-                                 :y            (+ (second p) 10)
+      (fn [index p] [:text.numb {:x            (- (first p) 11)
+                                 :y            (+ (second p) 14)
                                  :font-family  "FontAwesome"
-                                 :font-size    "30"
+                                 :font-size    "38"
                                  :stroke       "white"
-                                 :stroke-width 1
+                                 :stroke-width 2
                                  :fill         ((:player play-state) colours)
                                  :key          index
-                                 } "\uf21d"])
+                                 } "\uf041"])
       p-locs)
     ))
 
@@ -98,28 +100,29 @@
   (let [settings (:settings @(:game common/Slippery))
         game-size (:game-size settings)
         p (esg/xy->viewport view (pads game-size))]
-    [:text.numb {:x (- (first p) 11.5)
-            :y (+  (second p) 3)
-            :font-family "FontAwesome"
-            :font-size "30"
-            :stroke "white"
-            :stroke-width 1
-            :fill "black"
-            } "\uf00d"] ;x marks the spot
+    [:text.numb {:x            (- (first p) 11.5)
+                 :y            (+ (second p) 10)
+                 :font-family  "FontAwesome"
+                 :font-size    "30"
+                 :stroke       "white"
+                 :stroke-width 2
+                 :fill         "black"
+                 } "\uf00d"]                                ;x marks the spot
     ))
 
-(rum/defc viewer-macro < rum/reactive []
+(rum/defc
+  viewer-macro < rum/reactive []
   [:svg {:view-box (str "0 0 " (:vw view) " " (:vh view))
-         :height "100%"
-         :width "100%"
-         :id "svg-container"
-;;         :on-mouse-down esg/handle-start-line
-;;         :on-mouse-move esg/handle-move-line
-;;         :on-mouse-out esg/handle-out
-;;         :on-mouse-up esg/handle-end-line
-;;         :on-touch-start esg/handle-start-line
-;;         :on-touch-move esg/handle-move-line
-;;         :on-touch-end esg/handle-end-line
+         :height   "100%"
+         :width    "100%"
+         :id       "svg-container"
+         ;;         :on-mouse-down esg/handle-start-line
+         ;;         :on-mouse-move esg/handle-move-line
+         ;;         :on-mouse-out esg/handle-out
+         ;;         :on-mouse-up esg/handle-end-line
+         ;;         :on-touch-start esg/handle-start-line
+         ;;         :on-touch-move esg/handle-move-line
+         ;;         :on-touch-end esg/handle-end-line
          }
    [:g {:transform "translate(-20, -20)"}
     (let [game (rum/react (:game common/Slippery))
@@ -136,39 +139,30 @@
        (comp/render-pad-path view pad-count
                              0
                              game-size
-                             {:stroke "#3366bb"
-                              :stroke-width 40
-                              :stroke-dasharray "15 20  5 10"
-                              :stroke-linecap "round"}
+                             {:stroke         "#b06000"
+                              :stroke-width   (- 174 (* pad-count (/ 125 40)))
+                              :stroke-linecap "round"
+                              }
                              )
 
-       ;; todo:
-       #_(comp/render-pad-path view pad-count
-                             0
-                             (min game-size (+ (:limit settings)
-                                     state))
-                             {:stroke "#0088ff"
-                              :stroke-width 30
-                              :stroke-linecap "round"}
-                             )
-
-
-       ;; todo: render path so far
        (comp/render-pad-path view pad-count
                              0
-                             state
-                             {:stroke "#cc7700"
-                              :stroke-width 20}
+                             game-size
+                             {:stroke           "rgba(220,140,0,1)"
+                              :stroke-width     (- 150 (* pad-count (/ 125 45)))
+                              :stroke-dasharray "15 20"
+                              ;:stroke-linecap "round"
+                              }
                              )
 
        ;; all islands
-       (map-indexed #(comp/pad view %2 {:fill (cond
-                                                (<= %1 state) "rgba(255, 160, 0, 0.8)"
-                                                (< %1 (+ state limit 1)) "#ffcc00"
-                                                :else "rgba(255, 160, 0, 0.6)")
+       (map-indexed #(comp/pad view %2 {:fill   (cond
+                                                  (not ((set state) %1)) "rgba(0, 128, 255, 0.8)"
+                                                  (< %1 (+ state limit 1)) "#ffcc00"
+                                                  :else "rgba(0, 0, 0, 0.4)")
                                         :stroke "none"
-                                        :style {:pointer-events (if (and (> %1 state) (< %1 (+ state limit 1))) "auto" "none")}
-                                        :n %1} (fn [event] (pad-click event %1))) pads)
+                                        :style  {:pointer-events (if (and (> %1 state) (< %1 (+ state limit 1))) "auto" "none")}
+                                        :n      %1} (fn [event] (pad-click event %1))) pads)
 
        ;; Target Cross
        ;; todo:
@@ -181,26 +175,25 @@
    ])
 
 
-(rum/defc help < rum/reactive []
-  [:div {:style {:padding "20px"}}
-   [:.alert.alert-info
-    "On your turn you can build up to "
-    [:b (:limit (:settings (rum/react (:game common/Slippery)))) " bridges"]
-    " over the shallows by "
-    [:b " tapping the yellow island you want to reach."]
-    " Be the first to reach the treasure marked with a cross. "]])
+(rum/defc
+  help < rum/reactive []
+  [:div
+   [:h3.center-block
+    {:style {:color     "white"
+             :max-width "800px"}}
+    "Tap an empty pad to move a marker there. Aim to be the last player to move."]])
 
-(defrecord Spiral-view []
-  IViewer
-  (get-message [this status]
-    (status messages))
+((defrecord Spiral-view []
+   IViewer
+   (get-message [this status]
+     (status messages))
 
-  (get-fill [this status]
-    ((status message-colours) colours))
+   (get-fill [this status]
+     ((status message-colours) colours))
 
-  (game-viewer [this config] (viewer-macro))
+   (game-viewer [this config] (viewer-macro))
 
-  (help-viewer [this]
-    (help))
+   (help-viewer [this]
+     (help))
 
-  )
+   ))
