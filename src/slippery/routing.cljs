@@ -170,8 +170,8 @@
 
 (defn params->url
   "convert parameters to a url"
-  [viewer game-size limit players]
-  (let [pmap {:game-size game-size :limit limit :players players}]
+  [viewer game-size coin-count limit players first-player]
+  (let [pmap {:game-size game-size :coin-count coin-count :limit limit :players players :first-player first-player}]
     (if (= viewer :number)
       (full-number pmap)
       (full-island pmap)
@@ -180,11 +180,13 @@
 (defn save-settings
   "save settings in the url"
   []
-  (let [settings (:settings @(:game common/Slippery))]
+  (let [settings (:settings @(:game common/Slippery))
+        play-state (:play-state @(:game common/Slippery))]
     (.replaceState js/history nil
                    (:title settings)
                    (params->url (:viewer settings) (:game-size settings)
-                                (:limit settings) (:players settings)))))
+                                (:coin-count settings) (:limit settings)
+                                (:players settings) ({:a 0 :b 1} (:player play-state))))))
 
 ;; history configuration.
 ;;

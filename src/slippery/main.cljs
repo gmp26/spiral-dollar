@@ -88,6 +88,12 @@
 (defn handle-dec-game-size [event]
   (handle-spinner event (:game common/Slippery) [:settings :game-size] #(validated-int (dec %) common/min-game-size common/max-game-size)))
 
+(defn handle-inc-coin-count [event]
+  (handle-spinner event (:game common/Slippery) [:settings :coin-count] #(validated-int (inc %) common/min-coin-count common/max-coin-count)))
+
+(defn handle-dec-coin-count [event]
+  (handle-spinner event (:game common/Slippery) [:settings :coin-count] #(validated-int (dec %) common/min-coin-count common/max-coin-count)))
+
 (defn handle-inc-limit [event]
   (handle-spinner event (:game common/Slippery) [:settings :limit] #(validated-int (inc %) common/min-limit common/max-limit)))
 
@@ -103,6 +109,9 @@
 
 (defn new-pad-count [event]
   (handle-int event common/min-game-size common/max-game-size (:game common/Slippery) [:settings :game-size]))
+
+(defn new-coin-count [event]
+  (handle-int event common/min-coin-count common/max-coin-count (:game common/Slippery) [:settings :coin-count]))
 
 (defn new-limit [event]
   (handle-int event common/min-limit common/max-limit (:game common/Slippery) [:settings :limit]))
@@ -130,17 +139,17 @@
 
 
 (rum/defc selector < rum/static [select-1? label1 label2 action1 action2]
-  [:div
-   [:button.btn.btn-default.dropdown-toggle
-    {:type "button"
-     :data-toggle "dropdown"
-     :aria-haspopup "true"
-     :aria-expanded "false"}
-    (if (select-1?) label1 label2)
-    [:span.caret]]
-   [:ul.dropdown-menu
-    [:li [:a {:href "#" :on-click action1} label1]]
-    [:li [:a {:href "#" :on-click action2} label2]]]])
+          [:div
+           [:button.btn.btn-default.dropdown-toggle
+            {:type          "button"
+             :data-toggle   "dropdown"
+             :aria-haspopup "true"
+             :aria-expanded "false"}
+            (if (select-1?) label1 label2)
+            [:span.caret]]
+           [:ul.dropdown-menu
+            [:li [:a {:href "#" :on-click action1} label1]]
+            [:li [:a {:href "#" :on-click action2} label2]]]])
 
 (rum/defc spinner < rum/static [value on-change on-up on-down]
   [:div
@@ -204,8 +213,12 @@
                        computer-first you-first)]])
 
          [:.row {:style {:padding "10px 0"}}
-          [:label.col-sm-5 {:for "p2"} "Game size"]
+          [:label.col-sm-5 {:for "p2"} "Game length"]
           (spinner (:game-size (:settings game)) new-pad-count handle-inc-game-size handle-dec-game-size)]
+
+         [:.row {:style {:padding "10px 0"}}
+          [:label.col-sm-5 {:for "p2"} "Game count"]
+          (spinner (:coin-count (:settings game)) new-coin-count handle-inc-coin-count handle-dec-coin-count)]
 
          [:.row {:style {:padding "10px 0"}}
           [:label.col-sm-4 {:for "p3"} "Moves are "]
