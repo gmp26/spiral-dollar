@@ -74,7 +74,7 @@
       (hist/push-history! (:play-state @(:game this)))
       (game/commit-play this move)))
 
-  (commit-play [this new-play]
+  (commit-play [this _]
     ;; in this version the new state will already be realised by the drag operation
     ;(swap! (:game this) assoc-in [:play-state :state] new-play)
     (when (not (game/is-over? this))
@@ -113,6 +113,7 @@
                              (swap! (:game this) assoc-in [:play-state :player] (game/next-player this)))))))
 
   (followers
+    "Hi there"
     [this state]
     (let [gm @(:game this)
           settings (:settings gm)
