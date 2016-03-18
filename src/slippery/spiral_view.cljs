@@ -76,18 +76,22 @@
                       point))
                   pads))])
 
-(defn show-player [view pads]
+(defn show-players [view pads]
   ;; todo!
   (let [play-state (:play-state @(:game common/Slippery))
-        p (esg/xy->viewport view (get pads (:state play-state)))]
-    [:text.numb {:x (- (first p) 15)
-            :y (+  (second p) 10)
-            :font-family "FontAwesome"
-            :font-size "30"
-            :stroke "white"
-            :stroke-width 1
-            :fill ((:player play-state) colours)
-            }  "\uf21d"] ;street-view
+        p-locs (map #(esg/xy->viewport view %) (map #(get pads %) (:state play-state)))]
+    (prn "pad-locations" p-locs)
+    (map-indexed
+      (fn [index p] [:text.numb {:x            (- (first p) 15)
+                                 :y            (+ (second p) 10)
+                                 :font-family  "FontAwesome"
+                                 :font-size    "30"
+                                 :stroke       "white"
+                                 :stroke-width 1
+                                 :fill         ((:player play-state) colours)
+                                 :key          index
+                                 } "\uf21d"])
+      p-locs)
     ))
 
 (defn show-game-size [view pads]
@@ -103,26 +107,6 @@
             :fill "black"
             } "\uf00d"] ;x marks the spot
     ))
-
-#_(defn show-numbers [view pads]
-  (let [game @(:game common/Slippery)
-        game-size (:game-size (:settings game))
-        state (:state (:play-state game))]
-    (map
-     #(do
-        (let [[dex p] %
-              [left top] (esg/xy->viewport view p)]
-          ;; render number
-          [:text.numb {:x (+ 4 (if (< dex 10) (- left 6) (- left 13)))
-                  :y (+ 10 (+ top 7))
-                  :stroke "white"
-                  :stroke-width 0.1
-                  :font-size 18
-                  :style {:font-weight 800}
-                  :fill "black"
-                  } dex]))
-     (keep-indexed (fn [index point]
-                     (when (or (<= index state) (= index game-size)) [index point])) pads)))  )
 
 (rum/defc viewer-macro < rum/reactive []
   [:svg {:view-box (str "0 0 " (:vw view) " " (:vh view))
@@ -190,8 +174,8 @@
        ;; todo:
        (show-game-size view pads)
 
-       ;; Current position of player
-       (show-player view pads)
+       ;; Current position of players
+       (show-players view pads)
 
        ])]
    ])
