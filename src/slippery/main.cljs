@@ -337,7 +337,7 @@
        ]
       (iview/game-viewer viewer play)
       #_(feedback)
-      ;(show-game-state)
+      (show-game-state)
       ]]))
 
 

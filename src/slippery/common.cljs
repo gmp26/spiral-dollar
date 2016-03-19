@@ -38,6 +38,27 @@
 (defrecord PlayState [player feedback state])
 (def initial-play-state (PlayState. :a "" (random-state initial-settings)))
 
+(defn is-number?
+  "is this the snail/island game of the crane/number game?"
+  [game]
+  (= :number (:viewer (:settings @(:game game)))))
+
+(defn- move-location [state move]
+  (last (filter #(< % move) state)))
+
+(defn make-move
+  "move the last state location smaller than the move "
+  [game-size state move]
+  (vec (filter #(< % game-size) (map #(if (= % (move-location state move)) move %) state)))
+  )
+
+(defn viewer-state [game state]
+  (vec (reverse (map #(- (inc (:game-size (:settings game))) %) state)))
+  )
+
+(defn viewer-dir [game]
+  (if (= :number (:viewer (:settings game)))
+    (partial +) (partial -)))
 
 (defrecord Game [game]
   game/IGame
@@ -45,9 +66,11 @@
   (is-over? [this]
     (let [gm @(:game this)
           state (:state (:play-state gm))]
-      (if (not-any? #(not= -1 %) (map - (cons 0 state) state))
-        (:player (:play-state gm))
-        false)))
+      (if (is-number? this)
+        (if (not-any? #(not= -1 %) (map - (cons 0 state) state))
+          (:player (:play-state gm))
+          false)
+        (= state []))))
 
   (get-status
     [this]
@@ -75,13 +98,19 @@
       (hist/push-history! (:play-state @(:game this)))
       (game/commit-play this move)))
 
-  (commit-play [this _]
-    ;; in this version the new state will already be realised by the drag operation
-    ;(swap! (:game this) assoc-in [:play-state :state] new-play)
+  (commit-play [this move]
+    (when (not (is-number? this))
+      (let [game @(:game this)
+            new-state (make-move (:game-size (:settings game)) (:state (:play-state game)) move)]
+        (swap! (:game this) assoc-in [:play-state :state] new-state)))
+
+    ;; in the number version the new state will already be realised by the drag operation
     (when (not (game/is-over? this))
       (swap! (:game this) assoc-in [:play-state :player] (game/next-player this))
       (if (game/is-computer-turn? this)
-        (game/schedule-computer-turn this))))
+        (game/schedule-computer-turn this)))
+
+    )
 
   (reset-game [this]
     (let [game-state (:game this)]
@@ -125,13 +154,20 @@
 
   (heap-equivalent
     [this]
+    (prn "common-h-e")
     (let [gm @(:game this)]
-      (rules/heap-equivalent (:limit (:settings gm)) (:state (:play-state gm))))
+      (rules/heap-equivalent (:limit (:settings gm)) (viewer-state gm (:state (:play-state gm)))))
     )
 
   (optimal-outcome [this]
     (let [gm @(:game this)]
-      (rules/optimal-outcome (:limit (:settings gm)) (:state (:play-state gm))))))
+      (if (is-number? this)
+        (rules/optimal-outcome (:limit (:settings gm))
+                               (:state (:play-state gm))
+                               )
+        (viewer-state gm (rules/optimal-outcome (:limit (:settings gm))
+                                                (viewer-state gm (:state (:play-state gm)))
+                                                ))))))
 
 (defonce Slippery (->Game (atom {:settings initial-settings
                               :play-state initial-play-state})))

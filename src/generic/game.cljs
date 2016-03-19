@@ -38,5 +38,6 @@
     "The nim-sum of the game - nim single heap equivalent of a slippery state")
 
   (optimal-outcome [this]
-    "If we are in an N state returns a winning move. If we are in a P state, returns a small move.")
+    "If we are in an N state returns a winning move. If we are in a P state, returns a small move.
+    vs determines the direction to move if nim-sum is zero.")
   )
