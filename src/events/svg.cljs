@@ -142,9 +142,7 @@
 
                            ;; handle possible drag-line
                            (line-move? line)
-                           (do
-                             #_(prn (str "line move " line))
-                             (play-line-move [g wps] line))
+                           (play-line-move [g wps] line)
 
                            ;; handle possible tap or click
                            (dot-move? dot)

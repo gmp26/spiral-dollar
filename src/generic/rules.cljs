@@ -22,23 +22,19 @@
   "Returns a seq of equivalent nim heaps for a dollar game-state"
 
   ([state]
-   (prn " h-e " state)
    (if (empty? state)
      '(0)
      (heap-equivalent 1000 state)))
 
   ([limit state]
-   (prn " h-e " limit ", " state)
    (map (comp #(mod % (inc limit)) first) (paired-gaps state))))
 
 (defn optimal-outcome
   "Return a winning move or a random small move"
   ([state]
-   (prn " o-o " state)
    (optimal-outcome 1000 state))
 
   ([limit state]
-   (prn " o-o " limit ", " state)
    (let [heaps (heap-equivalent limit state)
          nimsum (apply bit-xor heaps)
          possible-moves (map - heaps (map (partial bit-xor nimsum) heaps))

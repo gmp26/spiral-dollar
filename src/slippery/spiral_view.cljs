@@ -51,7 +51,6 @@
 ;;;;;;;; Game art ;;;;;;;;
 
 (defn pad-click [event pad-index]
-  (prn "pad " pad-index " clicked")
   (game/player-move common/Slippery pad-index)
   )
 
@@ -60,39 +59,21 @@
   [history play-state]
   ((set (map #(dissoc % :feedback) (:undo history))) (dissoc play-state :feedback)))
 
-(rum/defc
-  pads-reached-by < rum/reactive [view pads player]
-  [:g
-   (map
-     #(let [p (esg/xy->viewport view %)]
-       ;; render flag
-       [:text.numb {:x           (- (first p) 15)
-                    :y           (+ (second p) 10)
-                    :font-family "FontAwesome"
-                    :font-size   "30"
-                    :fill        (player colours)
-                    } "\uf041"])                            ; map-marker
-     (keep-indexed (fn [index point]
-                     (when (reached? (rum/react hist/history) (common/PlayState.
-                                                                player "" index))
-                       point))
-                   pads))])
-
 (defn show-players
   "show player positions on spiral"
   [view pads]
   (let [play-state (:play-state @(:game common/Slippery))
         p-locs (map #(esg/xy->viewport view %) (map #(get pads %) (:state play-state)))]
     (map-indexed
-      (fn [index p] [:text.numb {:x            (- (first p) 11)
+      (fn [index p] [:text.numb {:x            (- (first p) 17)
                                  :y            (+ (second p) 14)
                                  :font-family  "FontAwesome"
                                  :font-size    "38"
                                  :stroke       "white"
                                  :stroke-width 2
-                                 :fill         "black"
+                                 :fill         (({:a :b :b :a} (:player play-state)) colours)
                                  :key          index
-                                 :style {:pointer-events "none"}
+                                 :style        {:pointer-events "none"}
                                  } "\uf188"])
       p-locs)
     ))
@@ -153,7 +134,6 @@
                              {:stroke           "rgba(220,140,0,1)"
                               :stroke-width     (- 150 (* pad-count (/ 125 45)))
                               :stroke-dasharray "15 20"
-                              ;:stroke-linecap "round"
                               }
                              )
 

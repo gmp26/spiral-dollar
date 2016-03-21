@@ -50,7 +50,7 @@
 (defn make-move
   "move the last state location smaller than the move "
   [game-size state move]
-  (vec (filter #(< % game-size) (map #(if (= % (move-location state move)) move %) state)))
+  (vec (filter #(< % (inc game-size)) (map #(if (= % (move-location state move)) move %) state)))
   )
 
 (defn viewer-state [game state]
@@ -137,11 +137,12 @@
   (schedule-computer-turn
     [this]
     (let [o-o (game/optimal-outcome this)
-          ;new-state (if (is-number? this) o-o (vec (filter #(< % (:game-size (:settings @(:game this)))) o-o)))
-          new-state o-o]
-      (prn "o-o = " o-o " new-state = " new-state)
-      (util/delayed-call (:think-time (:settings @(:game this)))
+          new-state (if (is-number? this) o-o (vec (filter #(< % (:game-size (:settings @(:game this)))) o-o)))
+          ;new-state o-o
+          ]
+       (util/delayed-call (:think-time (:settings @(:game this)))
                          #(do
+                           (hist/push-history! (:play-state @(:game this)))
                            (swap! (:game this) assoc-in [:play-state :state] new-state)
                            (when (not (game/is-over? this))
                              (swap! (:game this) assoc-in [:play-state :player] (game/next-player this)))))))
@@ -158,7 +159,6 @@
 
   (heap-equivalent
     [this]
-    (prn "common-h-e")
     (let [gm @(:game this)]
       (rules/heap-equivalent (:limit (:settings gm)) (viewer-state gm (:state (:play-state gm)))))
     )
@@ -170,8 +170,8 @@
                                (:state (:play-state gm))
                                )
         (viewer-state gm (rules/optimal-outcome (:limit (:settings gm))
-                                                (viewer-state gm (:state (:play-state gm)))
-                                                ))))))
+                                                (viewer-state gm (filter #(< % (:game-size (:settings gm)))
+                                                                         (:state (:play-state gm))))))))))
 
 (defonce Slippery (->Game (atom {:settings initial-settings
                               :play-state initial-play-state})))

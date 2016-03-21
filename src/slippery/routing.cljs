@@ -62,7 +62,6 @@
          limit (js.parseInt l)
          players (js.parseInt p)
          first-player (js.parseInt f)]
-     (prn v ", " gz ", " cc ", " l ", " p ", " f)
      (when (and (common/check-game-size game-size)
                 (common/check-coin-count coin-count)
                 (common/check-limit limit)
@@ -76,7 +75,6 @@
                              (zero? first-player))) :a :b)]
          (swap! (:game common/Slippery) assoc-in [:play-state :player] fp))
        (common/switch-view viewer)
-       (prn @(:game common/Slippery))
        (game/reset-game common/Slippery)
        (if (game/is-computer-turn? common/Slippery)
          (game/schedule-computer-turn common/Slippery))))))

@@ -132,11 +132,16 @@
 (defn close-settings
   "remove eventhandler to avoid memory leak"
   [event]
-  (routing/save-settings)
-  (.off (js/$ "#settings") "hidden.bs.modal")
-  (game/reset-game common/Slippery)
-  (when (game/is-computer-turn? common/Slippery)
-    (game/schedule-computer-turn common/Slippery)))
+  (let [gm @(:game common/Slippery)
+        players (:players (:settings gm))]
+    (routing/save-settings)
+    (.off (js/$ "#settings") "hidden.bs.modal")
+    (let [next-player (:player (:play-state gm))]
+      (game/reset-game common/Slippery)
+      (if (= 1 players)
+        (swap! (:game common/Slippery) assoc-in [:play-state :player] next-player)))
+    (when (game/is-computer-turn? common/Slippery)
+      (game/schedule-computer-turn common/Slippery))))
 
 
 (rum/defc selector < rum/static [select-1? label1 label2 action1 action2]
@@ -337,7 +342,7 @@
        ]
       (iview/game-viewer viewer play)
       #_(feedback)
-      (show-game-state)
+      ;(show-game-state)
       ]]))
 
 

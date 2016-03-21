@@ -126,7 +126,6 @@
 
       ;; have we made a valid move?
       (let [end-value (Math.round (nth (:state (:play-state game)) index))]
-        (prn "end-value " end-value " original " original)
         (swap! common/drag-state assoc :drag-start nil)
         (when (< end-value original)
           (game/player-move common/Slippery [])))
