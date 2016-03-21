@@ -32,8 +32,9 @@
 (def initial-settings (Settings. "Silver Dollar" 20 6 4 2000 1 :number))
 
 (defn random-state [{:keys [:game-size :coin-count]}]
-  (vec (reduce #(if (< (count %1) coin-count) (conj %1 %2) %1) (sorted-set) (map #(inc (rand-int game-size)) (range (+ 5 coin-count))))))
-
+  (vec (reduce #(if (< (count %1) coin-count) (conj %1 %2) %1)
+               (sorted-set)
+               (map #(inc (rand-int game-size)) (range (+ 5 coin-count))))))
 
 (defrecord PlayState [player feedback state])
 (def initial-play-state (PlayState. :a "" (random-state initial-settings)))

@@ -92,6 +92,7 @@
                                  :stroke-width 2
                                  :fill         "black"
                                  :key          index
+                                 :style {:pointer-events "none"}
                                  } "\uf188"])
       p-locs)
     ))
