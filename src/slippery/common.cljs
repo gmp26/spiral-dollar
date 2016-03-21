@@ -34,7 +34,7 @@
 (defn random-state [{:keys [:game-size :coin-count]}]
   (vec (reduce #(if (< (count %1) coin-count) (conj %1 %2) %1)
                (sorted-set)
-               (map #(inc (rand-int game-size)) (range (+ 5 coin-count))))))
+               (map #(inc (rand-int (dec game-size))) (range (+ 5 coin-count))))))
 
 (defrecord PlayState [player feedback state])
 (def initial-play-state (PlayState. :a "" (random-state initial-settings)))
@@ -57,7 +57,7 @@
   (vec (reverse (map #(- (inc (:game-size (:settings game))) %) state)))
   )
 
-(defn viewer-dir [game]
+#_(defn viewer-dir [game]
   (if (= :number (:viewer (:settings game)))
     (partial +) (partial -)))
 
@@ -66,12 +66,12 @@
 
   (is-over? [this]
     (let [gm @(:game this)
-          state (:state (:play-state gm))]
+          play-state (:play-state gm)
+          state (:state play-state)
+          player (:player play-state)]
       (if (is-number? this)
-        (if (not-any? #(not= -1 %) (map - (cons 0 state) state))
-          (:player (:play-state gm))
-          false)
-        (= state []))))
+        (if (not-any? #(not= -1 %) (map - (cons 0 state) state)) player false)
+        (if (#{[] [(:game-size (:settings gm))]} state) player false))))
 
   (get-status
     [this]
@@ -136,7 +136,10 @@
 
   (schedule-computer-turn
     [this]
-    (let [new-state (game/optimal-outcome this)]
+    (let [o-o (game/optimal-outcome this)
+          ;new-state (if (is-number? this) o-o (vec (filter #(< % (:game-size (:settings @(:game this)))) o-o)))
+          new-state o-o]
+      (prn "o-o = " o-o " new-state = " new-state)
       (util/delayed-call (:think-time (:settings @(:game this)))
                          #(do
                            (swap! (:game this) assoc-in [:play-state :state] new-state)

@@ -159,11 +159,19 @@
 
        ;; all islands
        (map-indexed #(comp/pad view %2 {:fill   (cond
-                                                  (and (> (count state) 0) (not ((set state) %1)) (> %1 (state 0))) "rgba(0, 0, 0, 0.4)"
+                                                  (or (= %1 game-size)
+                                                      (and (> (count state) 0)
+                                                           (not ((set state) %1))
+                                                           (> %1 (state 0))
+                                                           )) "rgba(0, 0, 0, 0.4)"
                                                   (< %1 (+ state limit 1)) "#ffcc00"
                                                   :else "rgba(0, 0, 0, 0)")
                                         :stroke "none"
-                                        :style  {:pointer-events (if (and (not ((set state) %1)) (> %1 (state 0))) "auto" "none")}
+                                        :style  {:pointer-events (if (or (= %1 game-size)
+                                                                         (and (not ((set state) %1))
+                                                                              (not (empty? state))
+                                                                              (> %1 (state 0))
+                                                                              )) "auto" "none")}
                                         :n      %1} (fn [event] (pad-click event %1))) pads)
 
        ;; Target Cross
@@ -183,7 +191,7 @@
    [:h3.center-block
     {:style {:color     "white"
              :max-width "800px"}}
-    "Tap a spot to move a bug towards the snail's starry mouth. The winner moves last."]])
+    "Tap a spot to slide a bug towards the snail's starry mouth. The winner catches the last bug."]])
 
 ((defrecord Spiral-view []
    IViewer
